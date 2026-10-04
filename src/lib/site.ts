@@ -1,5 +1,3 @@
-import raw from "@/data/site.json";
-
 export type NavLink = { label: string; href: string };
 type Lines = string[];
 type TitleBody = { title: string; body: string };
@@ -106,9 +104,6 @@ export type SectionKey =
   | "pricing"
   | "faq"
   | "booking";
-
-// Later this comes from Supabase by hostname; for now one local file.
-export const site = raw as Site;
 
 /** Best available contact link: WhatsApp, then Instagram, then the booking section. */
 export function contactHref(s: Site, message?: string): string {

@@ -662,3 +662,22 @@ body::after {
   .tm-track { animation: tm-scroll var(--duration, 40s) linear infinite !important; }
   .tm-row[data-reverse] .tm-track { animation-direction: reverse !important; }
 }
+
+/* Site Yapıcı preview bar (Reformer Dijital colours, not the studio's). */
+.pv-bar {
+  position: fixed; left: 50%; bottom: 16px; z-index: 50; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 16px; width: min(640px, calc(100% - 24px));
+  padding: 10px 10px 10px 20px; border-radius: 999px; border: 1px solid rgba(255, 0, 255, 0.45);
+  background: rgba(10, 6, 8, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 0 40px rgba(255, 0, 255, 0.25); font-family: var(--font-nunito), system-ui, sans-serif;
+}
+.pv-bar p { flex: 1; margin: 0; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, 0.7); line-height: 1.35; }
+.pv-bar strong { color: #fff; font-weight: 900; }
+.pv-bar span { color: #ff00ff; font-weight: 900; }
+.pv-bar a { flex: none; padding: 13px 20px; border-radius: 999px; background: #ff00ff; color: #fff; font-size: 14px; font-weight: 900; box-shadow: 0 0 28px rgba(255, 0, 255, 0.5); }
+.site-root:has(.pv-bar) .brand-marquee { padding-bottom: 110px; }
+@media (max-width: 480px) {
+  .pv-bar { padding-left: 16px; gap: 10px; }
+  .pv-bar p { font-size: 12px; }
+  .pv-bar a { padding: 12px 14px; font-size: 13px; }
+}
