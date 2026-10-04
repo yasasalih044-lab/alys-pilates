@@ -1,0 +1,15 @@
+# Coolify (dockercompose build pack). The named volume keeps generated sites
+# and uploads across redeploys.
+services:
+  web:
+    build: .
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATA_DIR=/data
+    volumes:
+      - site-yapici-data:/data
+    expose:
+      - "3000"
+    restart: unless-stopped
+volumes:
+  site-yapici-data:
