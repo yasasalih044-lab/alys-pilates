@@ -1,0 +1,323 @@
+{
+  "brand": {
+    "name": "ALYS Pilates",
+    "wordmark": "alys pilates",
+    "monogram": "AL.",
+    "logo": "/images/alys-logo-white.webp",
+    "role": "Reformer Pilates Stüdyosu",
+    "tagline": "Çekmeköy'de reformer pilates. Grup, özel ve düet dersler.",
+    "mark": "/images/alys-logo-hd.webp",
+    "originalLogo": "/alys-logo.png",
+    "logoOnLight": "/images/alys-logo-hd.webp"
+  },
+  "theme": {
+    "bg": "#090909",
+    "surface": "#141414",
+    "ink": "#fafafa",
+    "muted": "#aaaaaa",
+    "line": "#454545",
+    "accent": "#ff2bd6"
+  },
+  "images": {
+    "hero": "/images/hero.webp",
+    "heroAlt": "Reformer aletinin yanında duran pilates eğitmeninin siyah-beyaz stüdyo portresi",
+    "studio": "/images/studio.webp",
+    "studioAlt": "Reformer üzerinde uzun bir esneme hareketi yapan kadının profilden siyah-beyaz fotoğrafı",
+    "detail": "/images/detail.webp",
+    "detailAlt": "Reformer kayışlarını ve yay barını kavrayan eller",
+    "texture": "/images/texture.webp"
+  },
+  "location": {
+    "district": "Çekmeköy",
+    "city": "İstanbul",
+    "address": "",
+    "mapQuery": "Çekmeköy, İstanbul"
+  },
+  "contact": {
+    "whatsapp": "",
+    "instagram": "",
+    "phone": ""
+  },
+  "nav": [
+    {
+      "label": "Stüdyo",
+      "href": "#studyo"
+    },
+    {
+      "label": "Dersler",
+      "href": "#dersler"
+    },
+    {
+      "label": "Süreç",
+      "href": "#surec"
+    },
+    {
+      "label": "Yorumlar",
+      "href": "#yorumlar"
+    }
+  ],
+  "navCta": "Deneme dersi",
+  "hero": {
+    "label": "Reformer Pilates · Çekmeköy",
+    "titleLines": [
+      "Güçlen, esne,",
+      "dengede kal."
+    ],
+    "description": "Reformer aletinde, eğitmen eşliğinde dersler. Seviyen ne olursa olsun hareketler ilk dersten itibaren sana göre ayarlanır.",
+    "primaryCta": "Deneme dersi ayırt",
+    "secondaryCta": "Dersleri keşfet",
+    "locationCta": "Yerimiz nerede?"
+  },
+  "strip": {
+    "lead": "Reformer pilates stüdyosu.",
+    "from": "Çekmeköy",
+    "to": "İstanbul",
+    "tail": "Grup · Özel · Düet"
+  },
+  "services": {
+    "label": "Dersler",
+    "titleLines": [
+      "Her bedenin",
+      "doğru bir temposu var."
+    ],
+    "intro": "Hedefine ve temponuza göre şekillenen üç ders biçimi.",
+    "cta": "Bilgi al",
+    "items": [
+      {
+        "name": "Reformer grup",
+        "description": "Küçük gruplarla, eğitmen eşliğinde tüm vücudu çalıştıran reformer akışı.",
+        "image": "/images/class-group.webp",
+        "alt": "Reformer aletlerinde yan yana çalışan üç kadın"
+      },
+      {
+        "name": "Özel ders",
+        "description": "Sadece sana odaklanan, hedefine göre kurgulanan birebir seans.",
+        "image": "/images/class-private.webp",
+        "alt": "Eğitmen eşliğinde reformer üzerinde birebir ders"
+      },
+      {
+        "name": "Düet",
+        "description": "Bir arkadaşınla aynı derste, iki kişiye özel hazırlanan program.",
+        "image": "/images/class-duet.webp",
+        "alt": "İki reformer üzerinde aynı esneme hareketini yapan iki kadın"
+      }
+    ]
+  },
+  "about": {
+    "label": "ALYS Pilates",
+    "titleLines": [
+      "Her hareket",
+      "kontrolle başlar."
+    ],
+    "body": "Reformer, yaylı direnciyle kasları hem güçlendirir hem uzatır. Eklemlere binen yük düşük olduğu için yeni başlayanlar da düzenli çalışanlar da aynı alette, kendi temposunda ilerler.",
+    "note": "Eğitmen eşliği. Sana göre ayarlanan direnç.",
+    "tags": [
+      "Reformer",
+      "Core",
+      "Duruş"
+    ],
+    "link": "İlk ders nasıl geçer?"
+  },
+  "process": {
+    "label": "Süreç",
+    "titleLines": [
+      "İlk mesajdan",
+      "hayalindeki forma."
+    ],
+    "intro": "Beş adımda, seni tanıyarak ve hedefine göre ilerleyen bir süreç.",
+    "items": [
+      {
+        "title": "Bize mesaj gönderin",
+        "body": "WhatsApp'tan yazın; hedefinizi ve uygun olduğunuz saatleri kısaca paylaşın."
+      },
+      {
+        "title": "Demo ders randevusu ayarlayalım",
+        "body": "Size uygun gün ve saati birlikte belirleyelim, ders tipini seçelim."
+      },
+      {
+        "title": "Demo derse gelin",
+        "body": "Rahat bir kıyafet ve kaymaz çorap yeterli. Eğitmeniniz aleti ve hareketleri tanıtır."
+      },
+      {
+        "title": "Beraber çalışmaya başlayalım",
+        "body": "Hedefinize göre programınızı ve ders sıklığınızı birlikte planlayalım."
+      },
+      {
+        "title": "Hayalinizdeki fiziğe ulaşın",
+        "body": "Düzenli derslerle güçlenin ve esneyin; ilerlemenizi eğitmeninizle birlikte takip edin."
+      }
+    ]
+  },
+  "perspective": {
+    "label": "Yaklaşım",
+    "titleLines": [
+      "Her bedenin",
+      "kendi yolu var."
+    ],
+    "intro": "Ne kadar çalıştığın kadar, nasıl çalıştığın da önemlidir.",
+    "caption": "ALYS Pilates / Reformer",
+    "kicker": "REFORMER PILATES · ÇEKMEKÖY",
+    "headline": "Sana göre kurulan",
+    "headlineEm": "bilinçli bir hareket.",
+    "items": [
+      {
+        "title": "Kontrollü hareket",
+        "body": "Her egzersiz yavaş ve kontrollü yapılır; hız değil doğru form önceliklidir."
+      },
+      {
+        "title": "Ayarlanabilir direnç",
+        "body": "Yay direnci seviyene göre değişir; aynı hareket hem kolaylaşır hem zorlaşır."
+      },
+      {
+        "title": "Eğitmen eşliği",
+        "body": "Hareketlerin her derste takip edilir, gerektiğinde düzeltilir."
+      }
+    ],
+    "link": "Deneme dersini konuşalım"
+  },
+  "pricing": {
+    "label": "Paketler",
+    "titleLines": [
+      "Ritmine uygun",
+      "bir paket."
+    ],
+    "sample": true,
+    "periods": [
+      "Grup ders",
+      "Özel ders"
+    ],
+    "unit": "/ ay",
+    "cta": "Bu paketi sor",
+    "plans": [
+      {
+        "name": "Ayda 4 ders",
+        "note": "Haftada 1",
+        "prices": [
+          4000,
+          8000
+        ],
+        "popular": false
+      },
+      {
+        "name": "Ayda 8 ders",
+        "note": "Haftada 2",
+        "prices": [
+          7200,
+          14400
+        ],
+        "popular": true
+      },
+      {
+        "name": "Ayda 12 ders",
+        "note": "Haftada 3",
+        "prices": [
+          9600,
+          19200
+        ],
+        "popular": false
+      }
+    ]
+  },
+  "faq": {
+    "label": "İlk dersten önce",
+    "title": "Merak ettikleriniz.",
+    "intro": "İlk adım, bize yazmak.",
+    "items": [
+      {
+        "q": "Daha önce hiç pilates yapmadım, katılabilir miyim?",
+        "a": "Evet. Eğitmen ilk derste aleti tanıtır ve hareketleri seviyene göre ayarlar."
+      },
+      {
+        "q": "Derse gelirken ne getirmeliyim?",
+        "a": "Rahat, vücudu saran bir kıyafet ve kaymaz çorap yeterli."
+      },
+      {
+        "q": "Reformer ile mat pilates arasındaki fark ne?",
+        "a": "Reformer yaylı dirençle çalışır. Direnç ayarlanabildiği için hareketler hem kolaylaştırılabilir hem zorlaştırılabilir."
+      },
+      {
+        "q": "Ders saatlerini nasıl öğrenirim?",
+        "a": "WhatsApp'tan yazman yeterli, güncel ders programını paylaşırız."
+      }
+    ]
+  },
+  "booking": {
+    "label": "Deneme dersi",
+    "titleLines": [
+      "Bir ders.",
+      "Net bir başlangıç."
+    ],
+    "body": "Hedefini ve uygun olduğun saatleri konuşalım. İlk derste seni tanıyıp nasıl ilerleyeceğimizi birlikte belirleyelim.",
+    "cardKicker": "İLK DERS",
+    "cardTitleLines": [
+      "Kendine",
+      "zaman ayır."
+    ],
+    "steps": [
+      "Uygun olduğun gün ve saatleri paylaş.",
+      "Ders tipini birlikte seçelim.",
+      "İlk derste aleti ve hareketleri tanı."
+    ],
+    "button": "WhatsApp'tan yaz",
+    "note": "Dersin gün ve saati karşılıklı netleştiğinde kesinleşir."
+  },
+  "marquee": [
+    "Reformer",
+    "Çekmeköy",
+    "Core",
+    "Duruş",
+    "Denge"
+  ],
+  "sections": [
+    "hero",
+    "services",
+    "about",
+    "process",
+    "perspective",
+    "testimonials",
+    "pricing",
+    "faq",
+    "booking"
+  ],
+  "testimonials": {
+    "label": "Öğrencilerimiz",
+    "titleLines": [
+      "Stüdyodan",
+      "ilk elden."
+    ],
+    "intro": "Derslerimize katılanların kendi cümleleriyle.",
+    "sample": true,
+    "items": [
+      {
+        "name": "Elif K.",
+        "meta": "Reformer grup",
+        "body": "İlk derste çok çekiniyordum ama eğitmenim hareketleri bana göre ayarladı. Artık haftamın en sevdiğim saati."
+      },
+      {
+        "name": "Merve A.",
+        "meta": "Özel ders",
+        "body": "Bel ağrım yüzünden başladım. Birebir derslerde her hareketin nedenini anlatmaları çok güven verdi."
+      },
+      {
+        "name": "Zeynep T.",
+        "meta": "Düet",
+        "body": "Arkadaşımla birlikte geliyoruz; hem motivasyon hem keyif. Stüdyonun sakin havası ayrıca iyi geliyor."
+      },
+      {
+        "name": "Selin D.",
+        "meta": "Reformer grup",
+        "body": "Gruplar kalabalık değil, eğitmen herkesle tek tek ilgileniyor. Duruşumdaki farkı ilk ay fark ettim."
+      },
+      {
+        "name": "Buse Y.",
+        "meta": "Özel ders",
+        "body": "Program tamamen hedefime göre kuruldu. Ders saatlerini esnek ayarlayabilmek benim için çok önemliydi."
+      },
+      {
+        "name": "Ayşe Ç.",
+        "meta": "Reformer grup",
+        "body": "Daha önce hiç pilates yapmamıştım. Aletleri tanıtmaları ve sabırları sayesinde kısa sürede alıştım."
+      }
+    ]
+  }
+}
