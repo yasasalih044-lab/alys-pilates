@@ -23,7 +23,7 @@ export type StoredSite = Site & { _meta?: SiteMeta };
 /** The approved ALYS export doubles as the public example site. */
 const SEEDS: Record<string, StoredSite> = {
   "alys-pilates": seed as StoredSite,
-  "payluna-pilates": { ...(payluna as StoredSite), _meta: { createdAt: "2026-10-05T00:00:00Z", preview: true } },
+  "payluna": { ...(payluna as StoredSite), _meta: { createdAt: "2026-10-05T00:00:00Z", preview: true } },
 };
 
 export async function getSite(slug: string): Promise<StoredSite | null> {
