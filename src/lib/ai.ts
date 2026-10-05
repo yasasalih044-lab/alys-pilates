@@ -15,103 +15,67 @@ export type CopyInput = {
   studio: string;
   district: string;
   city: string;
-  classes: string[];
+  services: string[];
+  /** Owner's raw notes per trainer; the model turns them into short bios. */
+  trainers: { name: string; info: string }[];
+  /** Write placeholder reviews (shown with an "örnek" note) when the owner gave none. */
+  sampleReviews: boolean;
 };
 
 export type SiteCopy = {
   tagline: string;
   heroTitleLines: string[];
-  servicesTitleLines: string[];
-  servicesIntro: string;
-  classDescriptions: string[];
-  aboutTitleLines: string[];
-  perspectiveHeadline: string;
-  perspectiveHeadlineEm: string;
-  principles: { title: string; body: string }[];
-  faq: { q: string; a: string }[];
-  bookingTitleLines: string[];
-  bookingBody: string;
-  bookingCardTitleLines: string[];
+  trainerBios: { title: string; bio: string }[];
+  reviews: { name: string; meta: string; body: string }[];
   marquee: string[];
 };
 
 const lines2 = { type: "array", items: { type: "string" }, minItems: 2, maxItems: 2 };
-const titleBody = {
-  type: "object",
-  additionalProperties: false,
-  required: ["title", "body"],
-  properties: { title: { type: "string" }, body: { type: "string" } },
-};
 
 const COPY_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: [
-    "tagline",
-    "heroTitleLines",
-    "servicesTitleLines",
-    "servicesIntro",
-    "classDescriptions",
-    "aboutTitleLines",
-    "perspectiveHeadline",
-    "perspectiveHeadlineEm",
-    "principles",
-    "faq",
-    "bookingTitleLines",
-    "bookingBody",
-    "bookingCardTitleLines",
-    "marquee",
-  ],
+  required: ["tagline", "heroTitleLines", "trainerBios", "reviews", "marquee"],
   properties: {
     tagline: { type: "string" },
     heroTitleLines: lines2,
-    servicesTitleLines: lines2,
-    servicesIntro: { type: "string" },
-    classDescriptions: { type: "array", items: { type: "string" } },
-    aboutTitleLines: lines2,
-    perspectiveHeadline: { type: "string" },
-    perspectiveHeadlineEm: { type: "string" },
-    principles: { type: "array", items: titleBody, minItems: 3, maxItems: 3 },
-    faq: {
+    trainerBios: {
       type: "array",
-      minItems: 4,
-      maxItems: 4,
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["q", "a"],
-        properties: { q: { type: "string" }, a: { type: "string" } },
+        required: ["title", "bio"],
+        properties: { title: { type: "string" }, bio: { type: "string" } },
       },
     },
-    bookingTitleLines: lines2,
-    bookingBody: { type: "string" },
-    bookingCardTitleLines: lines2,
+    reviews: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["name", "meta", "body"],
+        properties: { name: { type: "string" }, meta: { type: "string" }, body: { type: "string" } },
+      },
+    },
     marquee: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 5 },
   },
 };
 
 const SYSTEM = `Sen butik reformer pilates stüdyoları için Türkçe web sitesi metni yazan bir editörsün.
-Ton: sakin, zarif, editoryal; kısa cümleler; "sen" dili. Emoji, ünlem, markdown (*, _, #) YOK.
+Ton: sakin, zarif, editoryal; kısa cümleler. Emoji, ünlem, markdown (*, _, #) YOK.
 
-KESİN KURAL — uydurma yok: yıl/deneyim süresi, üye sayısı, ders süresi (dakika), grup kişi sayısı, ödül, sertifika, eğitmen adı, yüzde, garanti, sağlık/kilo vaadi, "en iyi" gibi bilgi verilmemiş ya da doğrulanamayan şeyleri YAZMA.
+KESİN KURAL — uydurma yok: yıl, sertifika, ödül, üye sayısı, yüzde, sağlık/kilo vaadi gibi VERİLMEMİŞ bilgileri yazma.
 
-BAŞLIK SATIRLARI (…TitleLines): iki satır birlikte TEK cümle; ikinci satır küçük harfle devam eder (özel isim değilse), sonu nokta. Her satır 2–4 kelime. Stüdyo adını başlıklarda KULLANMA. Bu onaylı örneklerin kalitesinde ve tonunda yaz, ama aynısını kopyalama:
-- hero: ["Güçlen, esne,", "dengede kal."]
-- services: ["Her bedenin", "doğru bir temposu var."]
-- about: ["Her hareket", "kontrolle başlar."]
-- booking: ["Bir ders.", "Net bir başlangıç."]
-- bookingCard: ["Kendine", "zaman ayır."]
-
-perspectiveHeadline + perspectiveHeadlineEm birlikte tek cümle (ör. "Sana göre kurulan" + "bilinçli bir hareket."); Em kısmı 2–3 kelime, işaret koyma.
-principles: reformer çalışma yaklaşımı hakkında 3 madde (ör. kontrollü hareket, ayarlanabilir yay direnci, eğitmen eşliği); başlık 2–3 kelime, gövde en fazla 18 kelime.
-classDescriptions: verilen ders listesindeki HER ders için aynı sırayla tek cümle (en fazla 16 kelime); dersin adını cümlede tekrar etme.
-faq: tam olarak şu 4 konu, bu sırayla: (1) daha önce hiç pilates yapmayan katılabilir mi, (2) derse gelirken ne getirmeli (rahat kıyafet ve kaymaz çorap), (3) reformer ile mat pilates farkı (yaylı, ayarlanabilir direnç), (4) ders saatleri ve randevu nasıl öğrenilir (WhatsApp'tan yazarak). Cevaplar en fazla 25 kelime.
-bookingBody: deneme dersi için tek-iki kısa cümle davet.
-servicesIntro: en fazla 14 kelime.
-tagline: stüdyonun ilçesini içeren tek cümle (ör. "Kadıköy'de reformer pilates. Grup, özel ve düet dersler.").
+heroTitleLines: iki satır birlikte TEK cümle, ikinci satır küçük harfle devam eder, sonu nokta, her satır 2–3 kelime ve EN FAZLA 16 karakter (boşluk dahil), stüdyo adı yok. Bu onaylı örneklerin kalitesinde ama aynısını kopyalamadan: ["Güçlen, esne,", "dengede kal."], ["Esne, güçlen,", "kendine dön."].
+tagline: stüdyonun ilçesini ve verilen hizmetleri anan tek cümle.
+trainerBios: verilen HER eğitmen için aynı sırayla. title = 2–4 kelimelik unvan (ör. "Reformer Pilates Eğitmeni"), notlarda daha net bir unvan varsa onu kullan. bio = notlardaki bilgileri 2–3 cümlelik, üçüncü tekil şahıs, sıcak ve profesyonel bir metne çevir; notlarda OLMAYAN hiçbir bilgiyi ekleme. Not boşsa bio tek cümle ve genel olsun (ör. derslerde hareketleri seviyeye göre ayarlar).
+reviews: istenirse 6 adet örnek öğrenci yorumu (name: "Elif K." gibi ad + soyadın baş harfi; meta: verilen hizmetlerden biri; body: 1–2 cümle, somut ama abartısız, sayı/süre/sağlık vaadi yok). İstenmezse boş dizi.
 marquee: tek kelimelik 5 Türkçe kavram; ilki "Reformer", ikincisi stüdyonun ilçesi.`;
 
 export async function generateCopy(input: CopyInput): Promise<SiteCopy> {
+  const trainers = input.trainers.length
+    ? input.trainers.map((t, i) => `${i + 1}. ${t.name}: ${t.info || "(not yok)"}`).join("\n")
+    : "(eğitmen yok — trainerBios boş dizi)";
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${KEY()}` },
@@ -122,7 +86,7 @@ export async function generateCopy(input: CopyInput): Promise<SiteCopy> {
         { role: "system", content: SYSTEM },
         {
           role: "user",
-          content: `Stüdyo: ${input.studio}\nKonum: ${input.district}, ${input.city}\nDersler (sırayla): ${input.classes.join(", ")}`,
+          content: `Stüdyo: ${input.studio}\nKonum: ${input.district}, ${input.city}\nHizmetler: ${input.services.join(", ")}\nEğitmenler:\n${trainers}\nÖrnek yorum yaz: ${input.sampleReviews ? "evet, 6 adet" : "hayır"}`,
         },
       ],
       text: { format: { type: "json_schema", name: "site_copy", strict: true, schema: COPY_SCHEMA } },
@@ -191,4 +155,73 @@ export async function whiteLogo(file: Buffer, mime: string): Promise<Buffer> {
     .resize({ height: 200, withoutEnlargement: true })
     .webp({ quality: 95, alphaQuality: 100 })
     .toBuffer();
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero photo: in the studio's own room (reference) and brand colours. */
+/* ------------------------------------------------------------------ */
+
+export async function heroImage(opts: { mode: "light" | "dark"; colours: string[]; room?: Buffer }): Promise<Buffer> {
+  const palette = opts.colours.filter((c) => !["white", "black", "soft grey"].includes(c)).slice(0, 3);
+  const outfit = palette[0] ?? "black";
+  const style =
+    opts.mode === "light"
+      ? `Bright, airy editorial colour photograph for a boutique pilates studio. Soft natural daylight, calm and premium. Brand colours ${palette.join(", ") || "neutral tones"} appear in her activewear and small details.`
+      : "Black-and-white editorial studio photograph, low-key dramatic side light, deep charcoal shadows, fine film grain, luxury fashion magazine look, lots of dark negative space.";
+  const room = opts.room
+    ? "Use the attached photo as the exact room: keep its walls, floor, windows, lighting fixtures and the same reformer machines; make it look like a professional photo shoot in that room."
+    : "A clean boutique reformer pilates studio with light-wood reformer machines.";
+  const prompt = `${style} ${room} A confident woman pilates instructor in her late twenties stands beside a reformer with one hand resting on its frame, wearing a fitted long-sleeve ${outfit} bodysuit, hair in a sleek bun, calm expression, three-quarter body framing from mid-thigh up, subject centred with clear space around her, vertical. Real-looking person, no text, no logo lettering, no watermark.`;
+
+  let res: Response;
+  if (opts.room) {
+    const ref = await sharp(opts.room).rotate().resize({ width: 1536, height: 1536, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
+    const form = new FormData();
+    form.append("model", "gpt-image-2");
+    form.append("image[]", new Blob([new Uint8Array(ref)], { type: "image/jpeg" }), "room.jpg");
+    form.append("prompt", prompt);
+    form.append("size", "1024x1536");
+    form.append("quality", "high");
+    form.append("output_format", "webp");
+    form.append("output_compression", "86");
+    res = await fetch("https://api.openai.com/v1/images/edits", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${KEY()}` },
+      body: form,
+      signal: AbortSignal.timeout(240_000),
+    });
+  } else {
+    res = await fetch("https://api.openai.com/v1/images/generations", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${KEY()}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "gpt-image-2", prompt, size: "1024x1536", quality: "high", output_format: "webp", output_compression: 86 }),
+      signal: AbortSignal.timeout(240_000),
+    });
+  }
+  const json = await res.json();
+  if (!res.ok) throw new Error(`hero: ${json.error?.message ?? res.status}`);
+  return Buffer.from(json.data[0].b64_json, "base64");
+}
+
+/* ------------------------------------------------------------------ */
+/* Light site: keep the colour logo, only its white ground becomes alpha (no AI). */
+/* ------------------------------------------------------------------ */
+
+export async function colourLogoOnTransparent(logo: Buffer): Promise<Buffer> {
+  const { data, info } = await sharp(logo).flatten({ background: "#ffffff" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+    let a = 255 - Math.min(r, g, b);
+    a = a < 10 ? 0 : Math.min(255, Math.round(((a - 10) * 255) / 245));
+    if (a === 0) {
+      data[i + 3] = 0;
+      continue;
+    }
+    const k = 255 / a;
+    data[i] = Math.max(0, 255 - (255 - r) * k);
+    data[i + 1] = Math.max(0, 255 - (255 - g) * k);
+    data[i + 2] = Math.max(0, 255 - (255 - b) * k);
+    data[i + 3] = a;
+  }
+  return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
 }

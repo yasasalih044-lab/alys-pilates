@@ -1,31 +1,7 @@
 import "server-only";
 import seed from "@/data/site.json";
-import type { SectionKey, Site } from "@/lib/site";
+import type { PricedService, SectionKey, Site } from "@/lib/site";
 import type { SiteCopy } from "@/lib/ai";
-
-/** Class types the form offers, with their default library photos. */
-export const CLASSES = {
-  group: {
-    name: "Reformer grup",
-    image: "/images/class-group.webp",
-    alt: "Reformer aletlerinde yan yana çalışan kadınlar",
-    period: "Grup ders",
-  },
-  private: {
-    name: "Özel ders",
-    image: "/images/class-private.webp",
-    alt: "Eğitmen eşliğinde reformer üzerinde birebir ders",
-    period: "Özel ders",
-  },
-  duet: {
-    name: "Düet",
-    image: "/images/class-duet.webp",
-    alt: "İki reformer üzerinde aynı hareketi yapan iki kadın",
-    period: null,
-  },
-} as const;
-
-export type ClassKey = keyof typeof CLASSES;
 
 export type BuilderInput = {
   studio: string;
@@ -34,27 +10,25 @@ export type BuilderInput = {
   address: string;
   whatsapp: string;
   instagram: string;
+  /** "auto" = from the logo; "" = white buttons; otherwise a hex colour. */
   accent: string;
-  classes: ClassKey[];
-  /** prices[period][i] for 4 / 8 / 12 lessons a month; null = ask. */
-  prices: Partial<Record<"group" | "private", (number | null)[]>>;
+  services: { name: string; packages: { sessions: number; price: number | null }[] }[];
+  trainers: { name: string; info: string }[];
+  reviews: { name: string; text: string }[];
 };
 
 export type BuilderAssets = {
+  theme: Site["theme"];
   logo: string;
-  originalLogo: string;
+  logoOnLight: string;
   hero?: string;
-  studio?: string;
-  detail?: string;
+  trainerPhotos: (string | undefined)[];
 };
 
-const PLAN_NAMES = [
-  { name: "Ayda 4 ders", note: "Haftada 1" },
-  { name: "Ayda 8 ders", note: "Haftada 2" },
-  { name: "Ayda 12 ders", note: "Haftada 3" },
-];
-
-/** Turns the form, the AI copy and the processed images into one site.json. */
+/**
+ * Form + AI copy + processed images → one site.json.
+ * Order the owner asked for: hero → flow → reviews → trainers → packages.
+ */
 export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAssets): Site {
   const base = structuredClone(seed) as Site;
   const district = input.district;
@@ -66,12 +40,27 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
     .map((w) => w[0]!.toLocaleUpperCase("tr"))
     .join("");
 
-  const pricedPeriods = (["group", "private"] as const).filter((k) => input.classes.includes(k));
-  const hasPricing = pricedPeriods.length > 0;
+  const services: PricedService[] = input.services.map((s) => ({
+    name: s.name,
+    packages: [...s.packages]
+      .sort((a, b) => a.sessions - b.sessions)
+      .map((p, i, all) => ({
+        name: `${p.sessions} seans`,
+        price: p.price,
+        popular: all.length >= 3 && i === Math.floor(all.length / 2),
+      })),
+  }));
 
-  const sections: SectionKey[] = ["hero", "services", "about", "process", "perspective"];
-  if (hasPricing) sections.push("pricing");
-  sections.push("faq", "booking");
+  const realReviews = input.reviews.map((r) => ({ name: r.name, meta: input.services[0]?.name ?? "Öğrenci", body: r.text }));
+  const reviews = realReviews.length ? realReviews : copy.reviews;
+  const hasTrainers = input.trainers.length > 0;
+
+  const sections: SectionKey[] = ["hero", "process"];
+  if (reviews.length) sections.push("testimonials");
+  if (hasTrainers) sections.push("trainers");
+  sections.push("pricing");
+
+  const accent = input.accent === "auto" ? assets.theme.accent : input.accent;
 
   return {
     ...base,
@@ -80,21 +69,17 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
       wordmark: input.studio.toLocaleLowerCase("tr"),
       monogram: `${initials}.`,
       logo: assets.logo,
-      mark: assets.originalLogo,
-      originalLogo: assets.originalLogo,
-      logoOnLight: assets.originalLogo,
+      mark: assets.logoOnLight,
+      originalLogo: assets.logoOnLight,
+      logoOnLight: assets.logoOnLight,
       role: "Reformer Pilates Stüdyosu",
       tagline: copy.tagline,
     },
-    theme: { ...base.theme, accent: input.accent },
+    theme: { ...assets.theme, accent },
     images: {
       ...base.images,
       hero: assets.hero ?? base.images.hero,
-      heroAlt: assets.hero ? `${input.studio} stüdyosundan bir kare` : base.images.heroAlt,
-      studio: assets.studio ?? base.images.studio,
-      studioAlt: assets.studio ? `${input.studio} stüdyosunda reformer` : base.images.studioAlt,
-      detail: assets.detail ?? base.images.detail,
-      detailAlt: assets.detail ? `${input.studio} stüdyosundan detay` : base.images.detailAlt,
+      heroAlt: `${input.studio} stüdyosunda reformerın yanında duran eğitmen`,
     },
     location: {
       district,
@@ -108,44 +93,31 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
       label: `Reformer Pilates · ${district}`,
       titleLines: copy.heroTitleLines,
       description: "",
+      secondaryCta: "Paketleri gör",
     },
-    services: {
-      ...base.services,
-      titleLines: copy.servicesTitleLines,
-      intro: copy.servicesIntro,
-      items: input.classes.map((k, i) => ({
-        name: CLASSES[k].name,
-        description: copy.classDescriptions[i] ?? "",
-        image: CLASSES[k].image,
-        alt: CLASSES[k].alt,
-      })),
+    testimonials: {
+      ...base.testimonials,
+      sample: realReviews.length === 0,
+      items: reviews,
     },
-    about: { ...base.about, label: input.studio, titleLines: copy.aboutTitleLines },
-    perspective: {
-      ...base.perspective,
-      caption: `${input.studio} / Reformer`,
-      kicker: `REFORMER PILATES · ${district.toLocaleUpperCase("tr")}`,
-      headline: copy.perspectiveHeadline,
-      headlineEm: copy.perspectiveHeadlineEm,
-      items: copy.principles,
-    },
-    testimonials: { ...base.testimonials, sample: false, items: [] },
+    trainers: hasTrainers
+      ? {
+          label: "Eğitmenlerimiz",
+          titleLines: ["Seni tanıyan", "eğitmenlerle çalış."],
+          items: input.trainers.map((t, i) => ({
+            name: t.name,
+            title: copy.trainerBios[i]?.title ?? "Pilates Eğitmeni",
+            bio: copy.trainerBios[i]?.bio ?? "",
+            photo: assets.trainerPhotos[i],
+          })),
+        }
+      : undefined,
     pricing: {
-      ...base.pricing,
+      label: "Paketler",
+      titleLines: ["Ritmine uygun", "bir paket."],
       sample: false,
-      periods: pricedPeriods.map((k) => CLASSES[k].period!),
-      plans: PLAN_NAMES.map((p, i) => ({
-        ...p,
-        prices: pricedPeriods.map((k) => input.prices[k]?.[i] ?? null),
-        popular: i === 1,
-      })),
-    },
-    faq: { ...base.faq, items: copy.faq },
-    booking: {
-      ...base.booking,
-      titleLines: copy.bookingTitleLines,
-      body: copy.bookingBody,
-      cardTitleLines: copy.bookingCardTitleLines,
+      cta: "Bu paketi sor",
+      services,
     },
     marquee: copy.marquee,
     sections,

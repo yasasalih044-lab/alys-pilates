@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
 import {
+  pricingServices,
   contactHref,
   isExternal,
   mapsHref,
@@ -53,6 +54,14 @@ function Heading({ label, lines, intro }: { label: string; lines: string[]; intr
   );
 }
 
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toLocaleUpperCase("tr"))
+    .join("");
+
 const pad2 = (i: number) => String(i + 1).padStart(2, "0");
 
 const sections: Record<SectionKey, (s: Site) => ReactNode> = {
@@ -84,7 +93,7 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
                 <MapPin />
               </span>
             </Ext>
-            <a className="inline-link" href="#dersler">
+            <a className="inline-link" href={s.sections.includes("services") ? "#dersler" : "#paketler"}>
               {s.hero.secondaryCta} <ArrowUpRight />
             </a>
           </div>
@@ -241,6 +250,36 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
     </section>
   ),
 
+  trainers: (s) =>
+    s.trainers?.items.length ? (
+      <section className="section trainers" id="egitmenler">
+        <div className="wrap">
+          <Heading label={s.trainers.label} lines={s.trainers.titleLines} />
+          <div className="trainer-grid">
+            {s.trainers.items.map((t) => (
+              <article key={t.name} className={`trainer${t.photo ? "" : " trainer-nophoto"}`}>
+                {t.photo ? (
+                  <div className="trainer-photo">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={t.photo} alt={t.name} loading="lazy" />
+                  </div>
+                ) : (
+                  <span className="trainer-mono" aria-hidden>
+                    {initialsOf(t.name)}
+                  </span>
+                )}
+                <div className="trainer-copy">
+                  <h3>{t.name}</h3>
+                  {t.title ? <p className="trainer-title">{t.title}</p> : null}
+                  <p>{t.bio}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+    ) : null,
+
   pricing: (s) => (
     <section className="section" id="paketler">
       <div className="wrap pricing-layout">
@@ -252,9 +291,7 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
           {s.pricing.sample ? <p className="tm-note">Örnek fiyatlar · stüdyonun güncel fiyatlarıyla değiştirilir.</p> : null}
         </div>
         <PricingInteraction
-          periods={s.pricing.periods}
-          plans={s.pricing.plans}
-          unit={s.pricing.unit}
+          services={pricingServices(s)}
           cta={s.pricing.cta}
           contact={s.contact.whatsapp.replace(/\D/g, "")}
           brandName={s.brand.name}

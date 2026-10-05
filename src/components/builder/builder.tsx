@@ -4,84 +4,77 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 const RD_WHATSAPP = "905454498280";
 
-type ClassKey = "group" | "private" | "duet";
-const CLASS_OPTIONS: { key: ClassKey; label: string; hint: string }[] = [
-  { key: "group", label: "Reformer grup", hint: "Küçük gruplarla dersler" },
-  { key: "private", label: "Özel ders", hint: "Birebir seanslar" },
-  { key: "duet", label: "Düet", hint: "İki kişilik dersler" },
-];
+const SERVICE_SUGGESTIONS = ["Reformer grup", "Özel ders", "Düet", "Mat pilates", "Fonksiyonel antrenman", "Hamile pilatesi"];
 const SWATCHES = [
-  { label: "Pembe", value: "#ff2bd6" },
-  { label: "Mor", value: "#a855f7" },
-  { label: "Altın", value: "#d4af37" },
-  { label: "Yeşil", value: "#22c55e" },
-  { label: "Mavi", value: "#3b82f6" },
+  { label: "Pembe", value: "#d6249f" },
+  { label: "Mor", value: "#7a3fb0" },
+  { label: "Altın", value: "#b8902f" },
+  { label: "Yeşil", value: "#2f8f4e" },
+  { label: "Mavi", value: "#2f63c9" },
   { label: "Beyaz", value: "" },
 ];
-const PHOTO_SLOTS = [
-  { key: "photo_hero", label: "Ana görsel", hint: "Sitenin girişinde, dikey" },
-  { key: "photo_studio", label: "Stüdyo", hint: "Reformerlarınız, salon" },
-  { key: "photo_detail", label: "Detay", hint: "Hareket, el, alet" },
-] as const;
-const PLAN_LABELS = ["Ayda 4 ders", "Ayda 8 ders", "Ayda 12 ders"];
 
-type Prices = Record<"group" | "private", string[]>;
+type Pkg = { sessions: string; price: string };
+type Service = { name: string; packages: Pkg[] };
+type Trainer = { name: string; info: string; photo: File | null };
+type Review = { name: string; text: string };
 
-const STEPS = ["intro", "studio", "location", "contact", "classes", "prices", "color", "photos", "build", "done"] as const;
+const STEPS = ["intro", "studio", "photos", "location", "contact", "services", "trainers", "reviews", "color", "build", "done"] as const;
 type Step = (typeof STEPS)[number];
 
-/** Rough wall-clock stages while the server works (logo redraw is the slow part). */
 const BUILD_STAGES = [
-  { at: 0, text: "Bilgilerin alınıyor" },
-  { at: 4, text: "Site metinlerin yazılıyor" },
-  { at: 12, text: "Logon yüksek çözünürlükte yeniden çiziliyor" },
-  { at: 40, text: "Renklerin ve fotoğrafların yerleştiriliyor" },
-  { at: 65, text: "Son dokunuşlar yapılıyor" },
+  { at: 0, text: "Logondan renk paletin çıkarılıyor" },
+  { at: 5, text: "Site metinlerin yazılıyor" },
+  { at: 14, text: "Salonundan kapak fotoğrafın hazırlanıyor" },
+  { at: 55, text: "Logon siteye yerleştiriliyor" },
+  { at: 80, text: "Son dokunuşlar yapılıyor" },
 ];
+
+const newPkg = (): Pkg => ({ sessions: "", price: "" });
 
 export function Builder() {
   const [step, setStep] = useState<Step>("intro");
   const [studio, setStudio] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
+  const [photos, setPhotos] = useState<(File | null)[]>([null, null, null]);
   const [district, setDistrict] = useState("");
   const [city, setCity] = useState("İstanbul");
   const [address, setAddress] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [instagram, setInstagram] = useState("");
-  const [classes, setClasses] = useState<ClassKey[]>(["group", "private"]);
-  const [prices, setPrices] = useState<Prices>({ group: ["", "", ""], private: ["", "", ""] });
-  const [accent, setAccent] = useState("#ff2bd6");
-  const [photos, setPhotos] = useState<Record<string, File | null>>({});
+  const [services, setServices] = useState<Service[]>([{ name: "Reformer grup", packages: [newPkg(), newPkg(), newPkg()] }]);
+  const [hasTrainers, setHasTrainers] = useState<boolean | null>(null);
+  const [trainers, setTrainers] = useState<Trainer[]>([{ name: "", info: "", photo: null }]);
+  const [reviews, setReviews] = useState<Review[]>([{ name: "", text: "" }]);
+  const [accent, setAccent] = useState<string>("auto");
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const honeypot = useRef<HTMLInputElement>(null);
 
   const index = STEPS.indexOf(step);
-  const formSteps = STEPS.indexOf("photos");
-  const progress = Math.min(100, Math.round((index / formSteps) * 100));
-  const pricedClasses = classes.filter((c): c is "group" | "private" => c !== "duet");
+  const lastForm = STEPS.indexOf("color");
+  const progress = Math.round((index / lastForm) * 100);
 
   const go = (s: Step) => {
     setError("");
     setStep(s);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const next = () => {
-    const n = STEPS[index + 1];
-    go(n === "prices" && pricedClasses.length === 0 ? "color" : n);
-  };
-  const back = () => {
-    const p = STEPS[index - 1];
-    go(p === "prices" && pricedClasses.length === 0 ? "classes" : p);
-  };
+  const next = () => go(STEPS[index + 1]);
+  const back = () => go(STEPS[index - 1]);
 
   const waDigits = whatsapp.replace(/\D/g, "").replace(/^0/, "").replace(/^90/, "");
+  const cleanServices = services
+    .map((s) => ({ name: s.name.trim(), packages: s.packages.filter((p) => Number(p.sessions) > 0) }))
+    .filter((s) => s.name && s.packages.length);
+  const cleanTrainers = trainers.filter((t) => t.name.trim());
   const valid: Partial<Record<Step, boolean>> = {
     studio: studio.trim().length >= 2 && !!logo,
     location: district.trim().length >= 2,
     contact: /^5\d{9}$/.test(waDigits),
-    classes: classes.length > 0,
+    services: cleanServices.length > 0,
+    trainers: hasTrainers === false || (hasTrainers === true && cleanTrainers.length > 0),
   };
 
   useEffect(() => {
@@ -94,19 +87,28 @@ export function Builder() {
   async function build() {
     go("build");
     setElapsed(0);
+    const realTrainers = hasTrainers ? cleanTrainers : [];
+    const payload = {
+      studio: studio.trim(),
+      district: district.trim(),
+      city: city.trim(),
+      address: address.trim(),
+      whatsapp,
+      instagram: instagram.trim(),
+      accent,
+      services: cleanServices.map((s) => ({
+        name: s.name,
+        packages: s.packages.map((p) => ({ sessions: Number(p.sessions), price: Number(p.price.replace(/\D/g, "")) || null })),
+      })),
+      trainers: realTrainers.map((t) => ({ name: t.name.trim(), info: t.info.trim() })),
+      reviews: reviews.filter((r) => r.name.trim() && r.text.trim()).map((r) => ({ name: r.name.trim(), text: r.text.trim() })),
+    };
     const fd = new FormData();
-    fd.set("studio", studio.trim());
-    fd.set("district", district.trim());
-    fd.set("city", city.trim());
-    fd.set("address", address.trim());
-    fd.set("whatsapp", whatsapp);
-    fd.set("instagram", instagram.trim());
-    fd.set("accent", accent);
+    fd.set("payload", JSON.stringify(payload));
     fd.set("website", honeypot.current?.value ?? "");
-    classes.forEach((c) => fd.append("classes", c));
-    pricedClasses.forEach((c) => prices[c].forEach((p, i) => fd.set(`price_${c}_${[4, 8, 12][i]}`, p)));
     if (logo) fd.set("logo", logo);
-    PHOTO_SLOTS.forEach(({ key }) => photos[key] && fd.set(key, photos[key]!));
+    photos.forEach((p, i) => p && fd.set(`photo_${i}`, p));
+    realTrainers.forEach((t, i) => t.photo && fd.set(`trainer_${i}`, t.photo));
     try {
       const res = await fetch("/api/generate", { method: "POST", body: fd });
       const json = await res.json().catch(() => ({}));
@@ -115,13 +117,15 @@ export function Builder() {
       go("done");
     } catch (e) {
       setError((e as Error).message);
-      setStep("photos");
+      setStep("color");
     }
   }
 
   const fullUrl = result ? `${window.location.origin}${result.url}` : "";
   const waHref = `https://wa.me/${RD_WHATSAPP}?text=${encodeURIComponent(`Merhaba, internet sitemi istiyorum: ${fullUrl}`)}`;
   const stage = [...BUILD_STAGES].reverse().find((s) => elapsed >= s.at)!;
+
+  const setService = (i: number, s: Service) => setServices(services.map((x, j) => (j === i ? s : x)));
 
   return (
     <div className="sy">
@@ -132,7 +136,7 @@ export function Builder() {
         <img className="sy-logo" src="/rd-logo.webp" alt="Reformer Dijital" width={150} height={150} />
         <input ref={honeypot} name="website" tabIndex={-1} autoComplete="off" className="sy-hp" aria-hidden />
 
-        {index > 0 && index <= formSteps ? (
+        {index > 0 && index <= lastForm ? (
           <div className="sy-progress" aria-hidden>
             <i style={{ width: `${progress}%` }} />
           </div>
@@ -146,14 +150,14 @@ export function Builder() {
                 Siteni yap, <span className="sy-hl">tek tıkla</span> yayınla.
               </h1>
               <p className="sy-sub">
-                Logonu yükle, birkaç soruyu cevapla. Reformer stüdyon için hazırlanmış siten birkaç dakika içinde önünde.
+                Logonu ve salonunun fotoğraflarını yükle, birkaç soruyu cevapla. Kendi renklerinde, kendi salonunda çekilmiş gibi görünen siten birkaç dakikada önünde.
               </p>
               <p className="sy-badge">İlk 1 ay ücretsiz kullan</p>
               <div className="sy-actions">
                 <button className="sy-btn" onClick={next}>
                   Siteni yap <Arrow />
                 </button>
-                <a className="sy-link" href="/s/alys-pilates" target="_blank" rel="noopener noreferrer">
+                <a className="sy-link" href="/s/payluna" target="_blank" rel="noopener noreferrer">
                   Örnek siteyi gör
                 </a>
               </div>
@@ -161,11 +165,32 @@ export function Builder() {
           )}
 
           {step === "studio" && (
-            <Question title="Stüdyonun adı ve logosu" sub="Logon aynen korunur, sadece yüksek çözünürlükte yeniden çizilir.">
+            <Question title="Stüdyonun adı ve logosu" sub="Logon aynen korunur. Sitenin renkleri logondan otomatik çıkarılır.">
               <Field label="Stüdyo adı">
-                <input className="sy-input" value={studio} onChange={(e) => setStudio(e.target.value)} placeholder="Örn. ALYS Pilates" maxLength={60} autoFocus />
+                <input className="sy-input" value={studio} onChange={(e) => setStudio(e.target.value)} placeholder="Örn. Payluna Pilates Studio" maxLength={60} autoFocus />
               </Field>
               <FileDrop label="Logo" hint="PNG, JPG veya WEBP · en fazla 10 MB" file={logo} onFile={setLogo} />
+            </Question>
+          )}
+
+          {step === "photos" && (
+            <Question
+              title="Salonundan fotoğraflar"
+              sub="Telefonla çekmen yeterli. Sitendeki fotoğraflar senin salonunda çekilmiş gibi hazırlanır. Ne kadar net olursa o kadar iyi."
+            >
+              <div className="sy-row sy-row-3">
+                {["Salonun genel hali", "Reformerlar", "Başka bir açı"].map((label, i) => (
+                  <FileDrop
+                    key={label}
+                    compact
+                    label={label}
+                    hint={i === 0 ? "En önemlisi" : "İsteğe bağlı"}
+                    file={photos[i]}
+                    onFile={(f) => setPhotos(photos.map((p, j) => (j === i ? f : p)))}
+                  />
+                ))}
+              </div>
+              {!photos.some(Boolean) ? <p className="sy-note">Fotoğraf yüklemezsen markana uygun genel bir stüdyo görseli kullanırız.</p> : null}
             </Question>
           )}
 
@@ -173,7 +198,7 @@ export function Builder() {
             <Question title="Stüdyon nerede?" sub='Sitedeki "Yerimiz nerede?" butonu bu adrese yol tarifi verir.'>
               <div className="sy-row">
                 <Field label="İlçe">
-                  <input className="sy-input" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="Örn. Çekmeköy" maxLength={40} autoFocus />
+                  <input className="sy-input" value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="Örn. Bakırköy" maxLength={40} autoFocus />
                 </Field>
                 <Field label="Şehir">
                   <input className="sy-input" value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} />
@@ -196,63 +221,178 @@ export function Builder() {
             </Question>
           )}
 
-          {step === "classes" && (
-            <Question title="Hangi dersleri veriyorsun?" sub="Birden fazla seçebilirsin.">
-              <div className="sy-options">
-                {CLASS_OPTIONS.map((o) => {
-                  const on = classes.includes(o.key);
-                  return (
-                    <button
-                      key={o.key}
-                      type="button"
-                      className={`sy-opt${on ? " sel" : ""}`}
-                      aria-pressed={on}
-                      onClick={() => setClasses(on ? classes.filter((c) => c !== o.key) : [...classes, o.key])}
-                    >
-                      <span className="sy-dot" aria-hidden />
-                      <span>
-                        {o.label}
-                        <small>{o.hint}</small>
+          {step === "services" && (
+            <Question title="Hizmetlerin neler?" sub="Her hizmetin seans paketlerini ve fiyatını yaz. Fiyatı boş bırakırsan sitede “Fiyat için yazın” görünür.">
+              {services.map((svc, i) => (
+                <div key={i} className="sy-service">
+                  <div className="sy-service-head">
+                    <input
+                      className="sy-input"
+                      value={svc.name}
+                      onChange={(e) => setService(i, { ...svc, name: e.target.value })}
+                      placeholder="Hizmet adı"
+                      maxLength={40}
+                      list="sy-service-names"
+                    />
+                    {services.length > 1 ? (
+                      <button type="button" className="sy-x" aria-label="Hizmeti sil" onClick={() => setServices(services.filter((_, j) => j !== i))}>
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                  {svc.packages.map((p, k) => (
+                    <div key={k} className="sy-pkg">
+                      <span className="sy-money">
+                        <input
+                          className="sy-input"
+                          inputMode="numeric"
+                          value={p.sessions}
+                          placeholder="8"
+                          onChange={(e) =>
+                            setService(i, { ...svc, packages: svc.packages.map((x, j) => (j === k ? { ...x, sessions: e.target.value.replace(/\D/g, "").slice(0, 3) } : x)) })
+                          }
+                        />
+                        <span>seans</span>
                       </span>
+                      <span className="sy-money">
+                        <input
+                          className="sy-input"
+                          inputMode="numeric"
+                          value={p.price}
+                          placeholder="Fiyat"
+                          onChange={(e) =>
+                            setService(i, { ...svc, packages: svc.packages.map((x, j) => (j === k ? { ...x, price: e.target.value.replace(/\D/g, "").slice(0, 7) } : x)) })
+                          }
+                        />
+                        <span>₺</span>
+                      </span>
+                      {svc.packages.length > 1 ? (
+                        <button type="button" className="sy-x" aria-label="Paketi sil" onClick={() => setService(i, { ...svc, packages: svc.packages.filter((_, j) => j !== k) })}>
+                          ×
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
+                  {svc.packages.length < 6 ? (
+                    <button type="button" className="sy-add" onClick={() => setService(i, { ...svc, packages: [...svc.packages, newPkg()] })}>
+                      + Paket ekle
                     </button>
-                  );
-                })}
-              </div>
+                  ) : null}
+                </div>
+              ))}
+              <datalist id="sy-service-names">
+                {SERVICE_SUGGESTIONS.map((s) => (
+                  <option key={s} value={s} />
+                ))}
+              </datalist>
+              {services.length < 6 ? (
+                <div className="sy-chips">
+                  {SERVICE_SUGGESTIONS.filter((s) => !services.some((x) => x.name === s)).map((s) => (
+                    <button key={s} type="button" className="sy-chip" onClick={() => setServices([...services, { name: s, packages: [newPkg(), newPkg()] }])}>
+                      + {s}
+                    </button>
+                  ))}
+                  <button type="button" className="sy-chip" onClick={() => setServices([...services, { name: "", packages: [newPkg()] }])}>
+                    + Başka hizmet
+                  </button>
+                </div>
+              ) : null}
             </Question>
           )}
 
-          {step === "prices" && (
-            <Question title="Aylık paket fiyatların" sub='Boş bıraktıkların sitede "Fiyat için yazın" olarak görünür.'>
-              {pricedClasses.map((c) => (
-                <div key={c} className="sy-price-group">
-                  <p className="sy-label">{c === "group" ? "Grup ders" : "Özel ders"}</p>
-                  <div className="sy-row sy-row-3">
-                    {PLAN_LABELS.map((l, i) => (
-                      <Field key={l} label={l}>
-                        <span className="sy-money">
-                          <input
-                            className="sy-input"
-                            inputMode="numeric"
-                            value={prices[c][i]}
-                            onChange={(e) => {
-                              const v = e.target.value.replace(/\D/g, "").slice(0, 7);
-                              setPrices({ ...prices, [c]: prices[c].map((p, j) => (j === i ? v : p)) });
-                            }}
-                            placeholder="—"
-                          />
-                          <span>₺</span>
-                        </span>
-                      </Field>
-                    ))}
+          {step === "trainers" && (
+            <Question title="Eğitmenin var mı?" sub="Varsa sitede “Eğitmenlerimiz” bölümü açılır. Yazdığın bilgileri biz düzgün bir metne çeviririz.">
+              <div className="sy-options sy-options-2">
+                {[
+                  { v: true, label: "Evet, var" },
+                  { v: false, label: "Hayır, şimdilik yok" },
+                ].map((o) => (
+                  <button key={o.label} type="button" className={`sy-opt${hasTrainers === o.v ? " sel" : ""}`} aria-pressed={hasTrainers === o.v} onClick={() => setHasTrainers(o.v)}>
+                    <span className="sy-dot" aria-hidden />
+                    <span>{o.label}</span>
+                  </button>
+                ))}
+              </div>
+              {hasTrainers
+                ? trainers.map((t, i) => (
+                    <div key={i} className="sy-service">
+                      <div className="sy-service-head">
+                        <input
+                          className="sy-input"
+                          value={t.name}
+                          onChange={(e) => setTrainers(trainers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                          placeholder="Eğitmenin adı soyadı"
+                          maxLength={50}
+                        />
+                        {trainers.length > 1 ? (
+                          <button type="button" className="sy-x" aria-label="Eğitmeni sil" onClick={() => setTrainers(trainers.filter((_, j) => j !== i))}>
+                            ×
+                          </button>
+                        ) : null}
+                      </div>
+                      <textarea
+                        className="sy-input sy-textarea"
+                        value={t.info}
+                        onChange={(e) => setTrainers(trainers.map((x, j) => (j === i ? { ...x, info: e.target.value } : x)))}
+                        placeholder="Kısaca anlat: kaç yıldır eğitmen, hangi eğitimleri aldı, neyle ilgileniyor…"
+                        maxLength={600}
+                        rows={3}
+                      />
+                      <FileDrop label="Fotoğrafı (isteğe bağlı)" hint="Yoksa baş harfleri görünür" file={t.photo} onFile={(f) => setTrainers(trainers.map((x, j) => (j === i ? { ...x, photo: f } : x)))} />
+                    </div>
+                  ))
+                : null}
+              {hasTrainers && trainers.length < 4 ? (
+                <button type="button" className="sy-add" onClick={() => setTrainers([...trainers, { name: "", info: "", photo: null }])}>
+                  + Eğitmen ekle
+                </button>
+              ) : null}
+            </Question>
+          )}
+
+          {step === "reviews" && (
+            <Question title="Öğrenci yorumların" sub="İsteğe bağlı. Google veya Instagram'daki yorumları kopyalayabilirsin. Boş bırakırsan örnek yorumlar konur ve sitede “örnek” notu görünür.">
+              {reviews.map((r, i) => (
+                <div key={i} className="sy-service">
+                  <div className="sy-service-head">
+                    <input
+                      className="sy-input"
+                      value={r.name}
+                      onChange={(e) => setReviews(reviews.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                      placeholder="Ad (örn. Elif K.)"
+                      maxLength={40}
+                    />
+                    {reviews.length > 1 ? (
+                      <button type="button" className="sy-x" aria-label="Yorumu sil" onClick={() => setReviews(reviews.filter((_, j) => j !== i))}>
+                        ×
+                      </button>
+                    ) : null}
                   </div>
+                  <textarea
+                    className="sy-input sy-textarea"
+                    value={r.text}
+                    onChange={(e) => setReviews(reviews.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))}
+                    placeholder="Yorum"
+                    maxLength={400}
+                    rows={2}
+                  />
                 </div>
               ))}
+              {reviews.length < 8 ? (
+                <button type="button" className="sy-add" onClick={() => setReviews([...reviews, { name: "", text: "" }])}>
+                  + Yorum ekle
+                </button>
+              ) : null}
             </Question>
           )}
 
           {step === "color" && (
-            <Question title="Vurgu rengin" sub="Butonlar bu renkte olur. Renk istemezsen beyaz kalır.">
+            <Question title="Renkler" sub="Varsayılan: logondaki renklerden otomatik. İstersen buton rengini kendin seç.">
               <div className="sy-swatches">
+                <button type="button" className={`sy-swatch sy-auto${accent === "auto" ? " sel" : ""}`} aria-pressed={accent === "auto"} onClick={() => setAccent("auto")}>
+                  <i aria-hidden />
+                  Logodan otomatik
+                </button>
                 {SWATCHES.map((s) => (
                   <button
                     key={s.label}
@@ -265,20 +405,6 @@ export function Builder() {
                     <i aria-hidden />
                     {s.label}
                   </button>
-                ))}
-                <label className={`sy-swatch sy-custom${SWATCHES.every((s) => s.value !== accent) ? " sel" : ""}`}>
-                  <input type="color" value={accent || "#ffffff"} onChange={(e) => setAccent(e.target.value)} />
-                  Kendi rengin
-                </label>
-              </div>
-            </Question>
-          )}
-
-          {step === "photos" && (
-            <Question title="Stüdyondan fotoğraflar" sub="İsteğe bağlı. Yüklemezsen sitene uygun hazır görsellerimizi kullanırız.">
-              <div className="sy-row sy-row-3">
-                {PHOTO_SLOTS.map((p) => (
-                  <FileDrop key={p.key} compact label={p.label} hint={p.hint} file={photos[p.key] ?? null} onFile={(f) => setPhotos({ ...photos, [p.key]: f })} />
                 ))}
               </div>
               {error ? <p className="sy-error">{error}</p> : null}
@@ -313,15 +439,15 @@ export function Builder() {
             </>
           )}
 
-          {index > 0 && index <= formSteps ? (
+          {index > 0 && index <= lastForm ? (
             <div className="sy-actions">
-              {step === "photos" ? (
+              {step === "color" ? (
                 <button className="sy-btn" onClick={build}>
                   Sitemi oluştur <Arrow />
                 </button>
               ) : (
                 <button className="sy-btn" onClick={next} disabled={valid[step] === false}>
-                  Devam <Arrow />
+                  {step === "photos" && !photos.some(Boolean) ? "Fotoğrafsız devam et" : step === "reviews" && !reviews.some((r) => r.text.trim()) ? "Şimdilik geç" : "Devam"} <Arrow />
                 </button>
               )}
               <button className="sy-back" onClick={back}>
@@ -371,11 +497,7 @@ function FileDrop({
   useEffect(() => () => (url ? URL.revokeObjectURL(url) : undefined), [url]);
   return (
     <label className={`sy-drop${compact ? " compact" : ""}${file ? " has" : ""}`}>
-      <input
-        type="file"
-        accept="image/png,image/jpeg,image/webp,image/heic,image/heif"
-        onChange={(e) => onFile(e.target.files?.[0] ?? null)}
-      />
+      <input type="file" accept="image/png,image/jpeg,image/webp,image/heic,image/heif" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {file ? <img src={url} alt="" /> : <span className="sy-plus" aria-hidden>+</span>}
       <span className="sy-drop-text">

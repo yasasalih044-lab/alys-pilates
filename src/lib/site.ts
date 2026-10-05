@@ -1,3 +1,8 @@
+export type PricedService = {
+  name: string;
+  packages: { name: string; price: number | null; popular?: boolean }[];
+};
+
 export type NavLink = { label: string; href: string };
 type Lines = string[];
 type TitleBody = { title: string; body: string };
@@ -83,11 +88,18 @@ export type Site = {
     titleLines: Lines;
     /** true = placeholder prices; shows a note until the studio's real prices replace them. */
     sample: boolean;
-    periods: string[];
-    unit: string;
     cta: string;
-    /** prices[i] belongs to periods[i]; null = "ask for price". */
-    plans: { name: string; note: string; prices: (number | null)[]; popular: boolean }[];
+    /** Session-based packages per service (Site Yapıcı). */
+    services?: PricedService[];
+    /** Legacy monthly layout (ALYS / Payluna seeds); converted by pricingServices(). */
+    periods?: string[];
+    unit?: string;
+    plans?: { name: string; note: string; prices: (number | null)[]; popular: boolean }[];
+  };
+  trainers?: {
+    label: string;
+    titleLines: Lines;
+    items: { name: string; title: string; bio: string; photo?: string }[];
   };
   faq: { label: string; title: string; intro: string; items: { q: string; a: string }[] };
   booking: {
@@ -112,6 +124,7 @@ export type SectionKey =
   | "process"
   | "perspective"
   | "testimonials"
+  | "trainers"
   | "pricing"
   | "faq"
   | "booking";
@@ -139,4 +152,15 @@ export function mapsHref(s: Site) {
 
 export function formatPrice(value: number): string {
   return new Intl.NumberFormat("tr-TR").format(value) + " ₺";
+}
+
+/** Services with session packages; old monthly seeds are mapped onto the same shape. */
+export function pricingServices(s: Site): PricedService[] {
+  if (s.pricing.services?.length) return s.pricing.services;
+  const periods = s.pricing.periods ?? [];
+  const plans = s.pricing.plans ?? [];
+  return periods.map((name, i) => ({
+    name,
+    packages: plans.map((p) => ({ name: p.name, price: p.prices[i] ?? null, popular: p.popular })),
+  }));
 }
