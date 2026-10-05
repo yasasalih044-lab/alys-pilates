@@ -158,49 +158,103 @@ export async function whiteLogo(file: Buffer, mime: string): Promise<Buffer> {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hero photo: in the studio's own room (reference) and brand colours. */
+/* Image calls: one place for edits/generations, 429 back-off, errors. */
 /* ------------------------------------------------------------------ */
 
-export async function heroImage(opts: { mode: "light" | "dark"; colours: string[]; room?: Buffer }): Promise<Buffer> {
-  const palette = opts.colours.filter((c) => !["white", "black", "soft grey"].includes(c)).slice(0, 3);
-  const outfit = palette[0] ?? "black";
-  const style =
-    opts.mode === "light"
-      ? `Bright, airy editorial colour photograph for a boutique pilates studio. Soft natural daylight, calm and premium. Brand colours ${palette.join(", ") || "neutral tones"} appear in her activewear and small details.`
-      : "Black-and-white editorial studio photograph, low-key dramatic side light, deep charcoal shadows, fine film grain, luxury fashion magazine look, lots of dark negative space.";
-  const room = opts.room
-    ? "Use the attached photo as the exact room: keep its walls, floor, windows, lighting fixtures and the same reformer machines; make it look like a professional photo shoot in that room."
-    : "A clean boutique reformer pilates studio with light-wood reformer machines.";
-  const prompt = `${style} ${room} A confident woman pilates instructor in her late twenties stands beside a reformer with one hand resting on its frame, wearing a fitted long-sleeve ${outfit} bodysuit, hair in a sleek bun, calm expression, three-quarter body framing from mid-thigh up, subject centred with clear space around her, vertical. Real-looking person, no text, no logo lettering, no watermark.`;
-
-  let res: Response;
-  if (opts.room) {
-    const ref = await sharp(opts.room).rotate().resize({ width: 1536, height: 1536, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
-    const form = new FormData();
-    form.append("model", "gpt-image-2");
-    form.append("image[]", new Blob([new Uint8Array(ref)], { type: "image/jpeg" }), "room.jpg");
-    form.append("prompt", prompt);
-    form.append("size", "1024x1536");
-    form.append("quality", "high");
-    form.append("output_format", "webp");
-    form.append("output_compression", "86");
-    res = await fetch("https://api.openai.com/v1/images/edits", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${KEY()}` },
-      body: form,
-      signal: AbortSignal.timeout(240_000),
-    });
-  } else {
-    res = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${KEY()}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: "gpt-image-2", prompt, size: "1024x1536", quality: "high", output_format: "webp", output_compression: 86 }),
-      signal: AbortSignal.timeout(240_000),
-    });
+export class ImageError extends Error {
+  constructor(
+    message: string,
+    readonly safety: boolean,
+  ) {
+    super(message);
   }
-  const json = await res.json();
-  if (!res.ok) throw new Error(`hero: ${json.error?.message ?? res.status}`);
-  return Buffer.from(json.data[0].b64_json, "base64");
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** gpt-image-2 call. refs → images/edits (reference photos), none → images/generations. */
+async function imageCall(prompt: string, size: string, refs: Buffer[] = []): Promise<Buffer> {
+  for (let attempt = 0; ; attempt++) {
+    let res: Response;
+    if (refs.length) {
+      const form = new FormData();
+      form.append("model", "gpt-image-2");
+      refs.forEach((r, i) => form.append("image[]", new Blob([new Uint8Array(r)], { type: "image/jpeg" }), `ref-${i}.jpg`));
+      form.append("prompt", prompt);
+      form.append("size", size);
+      form.append("quality", "high");
+      form.append("output_format", "webp");
+      form.append("output_compression", "86");
+      res = await fetch("https://api.openai.com/v1/images/edits", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${KEY()}` },
+        body: form,
+        signal: AbortSignal.timeout(240_000),
+      });
+    } else {
+      res = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${KEY()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "gpt-image-2", prompt, size, quality: "high", output_format: "webp", output_compression: 86 }),
+        signal: AbortSignal.timeout(240_000),
+      });
+    }
+    const json = await res.json();
+    if (res.ok) return Buffer.from(json.data[0].b64_json, "base64");
+    const msg: string = json.error?.message ?? String(res.status);
+    // Input-image rate limit is 5/min: wait as told and retry a few times.
+    if (res.status === 429 && attempt < 4) {
+      const secs = Number(/try again in ([\d.]+)s/.exec(msg)?.[1] ?? 15);
+      await wait(Math.ceil(secs + 1) * 1000);
+      continue;
+    }
+    throw new ImageError(msg, /safety/i.test(msg));
+  }
+}
+
+/** Owner photos → small JPEG references (phone shots, story screenshots, HEIC-free). */
+export async function asReference(img: Buffer) {
+  return sharp(img).rotate().resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 86 }).toBuffer();
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero photo: in the studio's own room (references) and brand colours. */
+/* ------------------------------------------------------------------ */
+
+export async function heroImage(opts: { mode: "light" | "dark"; outfit: string; colours: string[]; rooms: Buffer[] }): Promise<Buffer> {
+  const palette = opts.colours.filter((c) => !["white", "black", "soft grey"].includes(c)).slice(0, 3);
+  const look =
+    opts.mode === "light"
+      ? "Bright, airy editorial colour photograph with soft natural daylight; calm, clean and premium."
+      : `Cinematic editorial colour photograph with a calm, premium evening mood: the studio's own lighting, deep rich tones${palette.length ? ` and subtle ${palette.join(", ")} accents` : ""}.`;
+  const subject = `A friendly female pilates instructor in her late twenties stands next to a reformer machine with one hand resting on its frame. She wears a modest matching athletic set — a long-sleeve sports top and full-length leggings — in ${opts.outfit}, hair tied back, natural confident smile. Framed from the knees up, vertical portrait, subject centred with clear space around her.`;
+  const rules = "Professional fitness brand campaign photo, fully clothed, wholesome, realistic people. No text, no logos, no watermark, no phone interface.";
+  const room = "The attached photos show this studio. Use it as the exact setting: same walls, floor, ceiling and lights, windows and the same reformer machines. Ignore any phone-app overlays, text, stickers or icons in the photos.";
+
+  // 1) their studio as the set; 2) same look without references; the caller falls back to their own photo.
+  if (opts.rooms.length) {
+    try {
+      return await imageCall(`${look} ${room} ${subject} ${rules}`, "1024x1536", opts.rooms.slice(0, 2));
+    } catch (e) {
+      console.error("hero with studio references failed", (e as Error).message);
+    }
+  }
+  return imageCall(`${look} A boutique reformer pilates studio with wooden reformer machines. ${subject} ${rules}`, "1024x1536");
+}
+
+/** Their own studio photo as the hero when generation is refused: never another studio's image. */
+export async function roomAsHero(room: Buffer) {
+  return sharp(room).rotate().resize(1024, 1536, { fit: "cover", position: "attention" }).webp({ quality: 84 }).toBuffer();
+}
+
+/* ------------------------------------------------------------------ */
+/* Trainer photo: the same person, clean white background, no graphics. */
+/* ------------------------------------------------------------------ */
+
+export async function trainerPortrait(photo: Buffer): Promise<Buffer> {
+  const prompt =
+    "Cut the person out of the attached photo and place them on a seamless pure white studio background. Remove every text, caption, arrow, logo, sticker and graphic element. Keep the person exactly as they are: same face, hair, skin tone, clothing and pose — do not beautify, slim, age or change their identity. Soft even studio light with a gentle natural shadow. Vertical 4:5 portrait, head to waist, centred.";
+  return imageCall(prompt, "1024x1280", [await asReference(photo)]);
 }
 
 /* ------------------------------------------------------------------ */
@@ -222,6 +276,63 @@ export async function colourLogoOnTransparent(logo: Buffer): Promise<Buffer> {
     data[i + 1] = Math.max(0, 255 - (255 - g) * k);
     data[i + 2] = Math.max(0, 255 - (255 - b) * k);
     data[i + 3] = a;
+  }
+  return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
+}
+
+/* ------------------------------------------------------------------ */
+/* No-AI fallbacks: the site still builds when OpenAI is unavailable.  */
+/* ------------------------------------------------------------------ */
+
+const HERO_LINES = [
+  ["Güçlen, esne,", "dengede kal."],
+  ["Esne, güçlen,", "kendine dön."],
+  ["Nefes al,", "kendine alan aç."],
+  ["Her hareket", "seni güçlendirir."],
+];
+
+/** Approved, claim-free copy used when the copy call fails. */
+export function fallbackCopy(input: CopyInput): SiteCopy {
+  const pick = [...input.studio].reduce((n, c) => n + c.charCodeAt(0), 0) % HERO_LINES.length;
+  const svc = input.services[0] ?? "Reformer";
+  const sentence = (t: string) => (t ? t.charAt(0).toLocaleUpperCase("tr") + t.slice(1).replace(/[.\s]*$/, ".") : "");
+  return {
+    tagline: `${input.district}'de ${input.services.join(", ").toLocaleLowerCase("tr")}.`,
+    heroTitleLines: HERO_LINES[pick],
+    trainerBios: input.trainers.map((t) => ({
+      title: "Pilates Eğitmeni",
+      bio: t.info ? sentence(t.info) : "Derslerde hareketleri seviyene göre ayarlar ve her adımda eşlik eder.",
+    })),
+    reviews: input.sampleReviews
+      ? [
+          { name: "Elif K.", meta: svc, body: "İlk derste çok çekiniyordum ama hareketler bana göre ayarlandı. Artık haftamın en sevdiğim saati." },
+          { name: "Merve A.", meta: svc, body: "Her hareketin nedenini anlatmaları çok güven verdi. Stüdyonun sakin havası da ayrıca iyi geliyor." },
+          { name: "Zeynep T.", meta: svc, body: "Arkadaşımla birlikte geliyoruz; hem motivasyon hem keyif." },
+          { name: "Selin D.", meta: svc, body: "Eğitmen herkesle tek tek ilgileniyor, duruşumdaki farkı kısa sürede fark ettim." },
+          { name: "Buse Y.", meta: svc, body: "Ders saatlerini esnek ayarlayabilmek benim için çok önemliydi." },
+          { name: "Ayşe Ç.", meta: svc, body: "Daha önce hiç pilates yapmamıştım, sabırları sayesinde kısa sürede alıştım." },
+        ]
+      : [],
+    marquee: ["Reformer", input.district, "Denge", "Nefes", "Güç"],
+  };
+}
+
+/**
+ * Logo on a dark ground (e.g. blue letters on navy) → the same colour logo on
+ * transparency: pixels close to the ground colour fade out. No AI involved.
+ */
+export async function logoOnDark(logo: Buffer): Promise<Buffer> {
+  const { data, info } = await sharp(logo).flatten({ background: "#000000" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const at = (x: number, y: number) => {
+    const i = (y * info.width + x) * 4;
+    return [data[i], data[i + 1], data[i + 2]];
+  };
+  const cs = [at(2, 2), at(info.width - 3, 2), at(2, info.height - 3), at(info.width - 3, info.height - 3)];
+  const g = [0, 1, 2].map((k) => cs.reduce((n, c) => n + c[k], 0) / cs.length);
+  for (let i = 0; i < data.length; i += 4) {
+    const d = Math.max(Math.abs(data[i] - g[0]), Math.abs(data[i + 1] - g[1]), Math.abs(data[i + 2] - g[2])) / 255;
+    const t = Math.min(1, Math.max(0, (d - 0.12) / 0.33));
+    data[i + 3] = Math.round(t * t * (3 - 2 * t) * 255);
   }
   return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
 }

@@ -4,6 +4,7 @@ import path from "node:path";
 import seed from "@/data/site.json";
 import payluna from "@/data/payluna.json";
 import type { Site } from "@/lib/site";
+import type { BuilderInput } from "@/lib/build-site";
 
 // Generated sites and their uploads live on disk. On Coolify, mount a
 // persistent volume at DATA_DIR so previews survive redeploys.
@@ -13,6 +14,9 @@ const FILE = /^[a-z0-9-]{1,40}\.(webp|png|jpg)$/;
 
 export type SiteMeta = {
   createdAt: string;
+  updatedAt?: string;
+  /** Raw form input, kept so the site can be regenerated with newer prompts. */
+  input?: BuilderInput;
   /** Preview built by Site Yapıcı (shows the "bu siteyi istiyorum" bar). */
   preview: boolean;
   owner?: { studio: string; whatsapp: string; ip?: string };

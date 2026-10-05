@@ -1,8 +1,5 @@
-import sharp from "sharp";
-import { colourLogoOnTransparent, generateCopy, heroImage, whiteLogo } from "@/lib/ai";
-import { buildSite, normalizeWhatsapp, type BuilderInput } from "@/lib/build-site";
-import { paletteFromLogo } from "@/lib/palette";
-import { makeSlug, saveSite, saveUpload } from "@/lib/store";
+import { normalizeWhatsapp, type BuilderInput } from "@/lib/build-site";
+import { generateSite } from "@/lib/generate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,61 +98,15 @@ export async function POST(req: Request) {
   if (!input.services.length) return Response.json({ error: "En az bir hizmet ve seans paketi gir." }, { status: 400 });
 
   try {
-    const slug = await makeSlug(input.studio);
-    const logoBytes = await sharp(await bytes(logo)).rotate().resize({ width: 1000, height: 1000, fit: "inside", withoutEnlargement: true }).png().toBuffer();
-    const palette = await paletteFromLogo(logoBytes);
-    const mode = palette.theme.mode ?? "dark";
-
-    // Owner photos are kept as the reference for the hero; the first one is the room.
-    await Promise.all(rooms.map(async (f, i) => saveUpload(slug, `room-${i}.jpg`, await sharp(await bytes(f)).rotate().resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer())));
-
-    const [copy, logos, hero, trainerPhotos] = await Promise.all([
-      generateCopy({
-        studio: input.studio,
-        district: input.district,
-        city: input.city,
-        services: input.services.map((s) => s.name),
-        trainers: input.trainers,
-        sampleReviews: input.reviews.length === 0,
-      }),
-      (async () => {
-        const onLight = await saveUpload(slug, "logo-colour.webp", await colourLogoOnTransparent(logoBytes));
-        if (mode === "light") return { logo: onLight, onLight };
-        const white = await whiteLogo(logoBytes, "image/png")
-          .then((w) => saveUpload(slug, "logo-white.webp", w))
-          .catch((e) => {
-            console.error("white logo failed, using colour logo", e);
-            return onLight;
-          });
-        return { logo: white, onLight };
-      })(),
-      heroImage({ mode, colours: palette.names, room: rooms[0] ? await bytes(rooms[0]) : undefined })
-        .then((img) => saveUpload(slug, "hero.webp", img))
-        .catch((e) => {
-          console.error("hero image failed, using library photo", e);
-          return undefined;
-        }),
-      Promise.all(
-        trainerFiles.map(async (f, i) =>
-          f
-            ? saveUpload(slug, `trainer-${i}.webp`, await sharp(await bytes(f)).rotate().resize({ width: 800, height: 1000, fit: "cover" }).webp({ quality: 84 }).toBuffer())
-            : undefined,
-        ),
-      ),
-    ]);
-
-    const site = buildSite(input, copy, {
-      theme: palette.theme,
-      logo: logos.logo,
-      logoOnLight: logos.onLight,
-      hero,
-      trainerPhotos,
-    });
-    await saveSite(slug, {
-      ...site,
-      _meta: { createdAt: new Date().toISOString(), preview: true, owner: { studio: input.studio, whatsapp: input.whatsapp, ip } },
-    });
-    console.log(`site created: ${slug} (${input.studio}, ${input.district}, ${mode}, rooms=${rooms.length})`);
+    const slug = await generateSite(
+      input,
+      {
+        logo: await bytes(logo),
+        rooms: await Promise.all(rooms.map(bytes)),
+        trainers: await Promise.all(trainerFiles.map((f) => (f ? bytes(f) : null))),
+      },
+      { ip },
+    );
     return Response.json({ slug, url: `/s/${slug}` });
   } catch (e) {
     console.error("generate failed", e);

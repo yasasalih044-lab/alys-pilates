@@ -468,10 +468,11 @@ function themeCss(s: Site): string {
     "--cta": cta,
     "--cta-ink": luminance(cta) > 0.45 ? "#111111" : "#ffffff",
     "--scheme": light ? "light" : "dark",
-    "--photo-ground": light ? t.bg : "#030303",
+    // Colour photos fade into the page itself; B&W ones into near-black (the ALYS look).
+    "--photo-ground": light || t.photos === "color" ? t.bg : "#030303",
     "--photo-filter": t.photos === "color" ? "none" : "grayscale(1) contrast(1.04)",
     "--photo-filter-hover": t.photos === "color" ? "saturate(1.08)" : "grayscale(0.85) contrast(1.06)",
-    "--photo-blend": light ? "normal" : "lighten",
+    "--photo-blend": light || t.photos === "color" ? "normal" : "lighten",
     "--texture-blend": light ? "multiply" : "screen",
     "--texture-filter": light ? "invert(1)" : "none",
     "--texture-opacity": light ? "0.18" : "0.35",

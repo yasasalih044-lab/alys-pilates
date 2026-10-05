@@ -92,7 +92,57 @@ export function colorName([r, g, b]: RGB) {
   return `${tone}${base}`;
 }
 
-export async function paletteFromLogo(logo: Buffer): Promise<BrandPalette> {
+/** Most frequent saturated colours of an image (5-bit buckets), skipping its ground colour. */
+async function dominantColours(img: Buffer, ground: RGB | null, minS: number) {
+  const { data, info } = await sharp(img).flatten({ background: "#ffffff" }).resize(120, 120, { fit: "inside" }).raw().toBuffer({ resolveWithObject: true });
+  const buckets = new Map<string, { sum: RGB; n: number }>();
+  let lum = 0;
+  let count = 0;
+  for (let i = 0; i < data.length; i += info.channels) {
+    const c: RGB = [data[i], data[i + 1], data[i + 2]];
+    lum += luminance(c);
+    count++;
+    if (ground && Math.hypot(c[0] - ground[0], c[1] - ground[1], c[2] - ground[2]) < 48) continue;
+    const { s, l } = toHsl(c);
+    if (s < minS || l < 0.1 || l > 0.94) continue;
+    const key = c.map((v) => v >> 5).join(",");
+    const b = buckets.get(key) ?? { sum: [0, 0, 0], n: 0 };
+    b.sum = [b.sum[0] + c[0], b.sum[1] + c[1], b.sum[2] + c[2]];
+    b.n++;
+    buckets.set(key, b);
+  }
+  const colours = [...buckets.values()]
+    .filter((b) => b.n > 6)
+    .sort((x, y) => y.n - x.n)
+    .map((b) => b.sum.map((v) => v / b.n) as RGB);
+  // Merge near-duplicates so "purple" and "slightly lighter purple" count once.
+  const distinct: RGB[] = [];
+  for (const c of colours) {
+    if (distinct.every((d) => Math.abs(toHsl(d).h - toHsl(c).h) > 18 || Math.abs(toHsl(d).l - toHsl(c).l) > 0.25)) distinct.push(c);
+    if (distinct.length === 4) break;
+  }
+  return { colours: distinct, meanLum: count ? lum / count : 0.5 };
+}
+
+/** Lighten until it stands out on a dark page (buttons, highlights). */
+function forDarkPage(c: RGB, bg: RGB): RGB {
+  const { h, s } = toHsl(c);
+  let { l } = toHsl(c);
+  let out = c;
+  while (contrast(out, bg) < 4.5 && l < 0.85) {
+    l += 0.03;
+    out = fromHsl(h, Math.max(s, 0.55), l);
+  }
+  return out;
+}
+
+/**
+ * Logo (+ studio photos when the logo has no colour) → site theme.
+ * Every generated site gets colour photos; only the page tone changes:
+ *  - logo on a light ground → light page in the logo's colours
+ *  - logo on a dark ground → dark page tinted with that ground (navy, plum…) and the logo colour as accent
+ */
+export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promise<BrandPalette> {
   const { data, info } = await sharp(logo)
     .flatten({ background: "#ffffff" })
     .resize(120, 120, { fit: "inside" })
@@ -105,6 +155,7 @@ export async function paletteFromLogo(logo: Buffer): Promise<BrandPalette> {
   const corners = [px(1, 1), px(info.width - 2, 1), px(1, info.height - 2), px(info.width - 2, info.height - 2)];
   const ground = mix(mix(corners[0], corners[1], 0.5), mix(corners[2], corners[3], 0.5), 0.5);
   let lightGround = luminance(ground) > 0.6;
+  let transparent = false;
   // A transparent logo drawn in white is meant for dark pages, even though it
   // was flattened onto white above.
   const meta = await sharp(logo).metadata();
@@ -112,44 +163,38 @@ export async function paletteFromLogo(logo: Buffer): Promise<BrandPalette> {
     const { data: a, info: ai } = await sharp(logo).resize(120, 120, { fit: "inside" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
     let lum = 0;
     let n = 0;
+    let clear = 0;
     for (let i = 0; i < a.length; i += ai.channels) {
-      if (a[i + 3] < 128) continue;
+      if (a[i + 3] < 128) {
+        clear++;
+        continue;
+      }
       lum += luminance([a[i], a[i + 1], a[i + 2]]);
       n++;
     }
+    transparent = clear > (a.length / ai.channels) * 0.2;
     if (n && lum / n > 0.7) lightGround = false;
   }
 
-  // Bucket colours (5 bits per channel) and count, skipping the ground and greys.
-  const buckets = new Map<string, { sum: RGB; n: number }>();
-  for (let i = 0; i < data.length; i += info.channels) {
-    const c: RGB = [data[i], data[i + 1], data[i + 2]];
-    if (Math.hypot(c[0] - ground[0], c[1] - ground[1], c[2] - ground[2]) < 48) continue;
-    const { s, l } = toHsl(c);
-    if (s < 0.22 || l < 0.08 || l > 0.94) continue;
-    const key = c.map((v) => v >> 5).join(",");
-    const b = buckets.get(key) ?? { sum: [0, 0, 0], n: 0 };
-    b.sum = [b.sum[0] + c[0], b.sum[1] + c[1], b.sum[2] + c[2]];
-    b.n++;
-    buckets.set(key, b);
+  const logoColours = (await dominantColours(logo, ground, 0.22)).colours;
+  // A black-and-white logo borrows its colours from the studio photos.
+  let roomColours: RGB[] = [];
+  if (!logoColours.length && rooms.length) {
+    const seen = await Promise.all(rooms.slice(0, 3).map((r) => dominantColours(r, null, 0.35)));
+    roomColours = seen.flatMap((x) => x.colours).slice(0, 3);
   }
-  const colours = [...buckets.values()]
-    .filter((b) => b.n > 6)
-    .sort((a, b) => b.n - a.n)
-    .map((b) => b.sum.map((v) => v / b.n) as RGB);
+  const brand = logoColours.length ? logoColours : roomColours;
+  const names = [...new Set(brand.map(colorName))];
 
-  // Merge near-duplicates so "purple" and "slightly lighter purple" count once.
-  const distinct: RGB[] = [];
-  for (const c of colours) {
-    if (distinct.every((d) => Math.abs(toHsl(d).h - toHsl(c).h) > 18 || Math.abs(toHsl(d).l - toHsl(c).l) > 0.25)) distinct.push(c);
-    if (distinct.length === 4) break;
-  }
-
-  const names = [...new Set(distinct.map(colorName))];
-  const colourful = distinct.length > 0;
-
-  if (lightGround && colourful) {
-    const main = distinct[0];
+  if (lightGround) {
+    const main = brand[0];
+    if (!main) {
+      return {
+        lightGround,
+        names: ["black", "white"],
+        theme: { bg: "#faf8f5", surface: "#ffffff", ink: "#1c1b1a", muted: "#77736e", line: "#e3dfd9", accent: "", mode: "light", photos: "color" },
+      };
+    }
     const { h, s } = toHsl(main);
     const ink = fromHsl(h, Math.min(0.55, s), 0.17);
     const accent = forWhiteText(main);
@@ -170,20 +215,27 @@ export async function paletteFromLogo(logo: Buffer): Promise<BrandPalette> {
     };
   }
 
-  // Dark editorial: graphite page, logo redrawn white, B&W photos, accent from the logo if any.
-  const accent = colourful ? distinct.find((c) => toHsl(c).s > 0.4 && toHsl(c).l > 0.35) : undefined;
+  // Dark page: tint it with the logo's own dark ground (e.g. Therapia's navy),
+  // or faintly with the brand colour; accent = the logo colour, lifted to read.
+  const g = toHsl(ground);
+  const tint = !transparent && g.s > 0.15 && g.l < 0.35 ? ground : brand[0];
+  const bg: RGB = tint ? fromHsl(toHsl(tint).h, Math.min(0.55, Math.max(0.25, toHsl(tint).s)), 0.075) : [9, 9, 9];
+  const surface: RGB = tint ? fromHsl(toHsl(tint).h, Math.min(0.45, Math.max(0.2, toHsl(tint).s)), 0.115) : [20, 20, 20];
+  const accentBase = [...brand].sort((x, y) => toHsl(y).s - toHsl(x).s)[0];
+  const accent = accentBase ? forDarkPage(accentBase, bg) : null;
+  const ink = accent ? mix([247, 248, 250], accent, 0.03) : ([250, 250, 250] as RGB);
   return {
     lightGround,
     names: names.length ? names : ["black", "white"],
     theme: {
-      bg: "#090909",
-      surface: "#141414",
-      ink: "#fafafa",
-      muted: "#aaaaaa",
-      line: "#454545",
+      bg: hex(bg),
+      surface: hex(surface),
+      ink: hex(ink),
+      muted: hex(mix(ink, bg, 0.38)),
+      line: hex(mix(ink, bg, 0.74)),
       accent: accent ? hex(accent) : "",
       mode: "dark",
-      photos: "mono",
+      photos: "color",
     },
   };
 }
