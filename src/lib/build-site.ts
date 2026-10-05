@@ -25,13 +25,22 @@ export type BuilderAssets = {
   trainerPhotos: (string | undefined)[];
 };
 
+/** "betül yılmazer" → "Betül Yılmazer" (Turkish casing). Brand names are left as typed. */
+const titleCase = (t: string) =>
+  t
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toLocaleUpperCase("tr") + w.slice(1))
+    .join(" ");
+
 /**
  * Form + AI copy + processed images → one site.json.
  * Order the owner asked for: hero → flow → reviews → trainers → packages.
  */
 export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAssets): Site {
   const base = structuredClone(seed) as Site;
-  const district = input.district;
+  const district = titleCase(input.district);
+  input = { ...input, city: titleCase(input.city) };
   const place = [input.address, district, input.city].filter(Boolean).join(", ");
   const initials = input.studio
     .split(/\s+/)
@@ -51,7 +60,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
       })),
   }));
 
-  const realReviews = input.reviews.map((r) => ({ name: r.name, meta: input.services[0]?.name ?? "Öğrenci", body: r.text }));
+  const realReviews = input.reviews.map((r) => ({ name: titleCase(r.name), meta: input.services[0]?.name ?? "Öğrenci", body: r.text }));
   const reviews = realReviews.length ? realReviews : copy.reviews;
   const hasTrainers = input.trainers.length > 0;
 
@@ -105,7 +114,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
           label: "Eğitmenlerimiz",
           titleLines: ["Seni tanıyan", "eğitmenlerle çalış."],
           items: input.trainers.map((t, i) => ({
-            name: t.name,
+            name: titleCase(t.name),
             title: copy.trainerBios[i]?.title ?? "Pilates Eğitmeni",
             bio: copy.trainerBios[i]?.bio ?? "",
             photo: assets.trainerPhotos[i],
