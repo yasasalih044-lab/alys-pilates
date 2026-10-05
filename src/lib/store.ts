@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import seed from "@/data/site.json";
+import payluna from "@/data/payluna.json";
 import type { Site } from "@/lib/site";
 
 // Generated sites and their uploads live on disk. On Coolify, mount a
@@ -20,7 +21,10 @@ export type SiteMeta = {
 export type StoredSite = Site & { _meta?: SiteMeta };
 
 /** The approved ALYS export doubles as the public example site. */
-const SEEDS: Record<string, StoredSite> = { "alys-pilates": seed as StoredSite };
+const SEEDS: Record<string, StoredSite> = {
+  "alys-pilates": seed as StoredSite,
+  "payluna-pilates": { ...(payluna as StoredSite), _meta: { createdAt: "2026-10-05T00:00:00Z", preview: true } },
+};
 
 export async function getSite(slug: string): Promise<StoredSite | null> {
   if (!SLUG.test(slug)) return null;

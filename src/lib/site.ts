@@ -15,7 +15,18 @@ export type Site = {
     role: string;
     tagline: string;
   };
-  theme: { bg: string; surface: string; ink: string; muted: string; line: string; accent: string };
+  theme: {
+    bg: string;
+    surface: string;
+    ink: string;
+    muted: string;
+    line: string;
+    accent: string;
+    /** "light" = brand-coloured light page, colour logo; default "dark". */
+    mode?: "dark" | "light";
+    /** "color" keeps photos in colour; default "mono" (black and white). */
+    photos?: "mono" | "color";
+  };
   images: {
     hero: string;
     heroAlt: string;

@@ -371,7 +371,8 @@ function Marquee({ s }: { s: Site }) {
 /** Renders one studio site from its JSON. Theme colours are scoped to this wrapper. */
 export default function SitePage({ s, children }: { s: Site; children?: ReactNode }) {
   return (
-    <div className="site-root" style={themeVars(s)}>
+    <div className="site-root">
+      <style>{`:root{${themeCss(s)}}`}</style>
       <div className="texture" aria-hidden style={{ "--texture": `url(${s.images.texture})` } as CSSProperties} />
       <a className="skip" href="#main">
         İçeriğe geç
@@ -380,7 +381,7 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
         <nav className="nav wrap" aria-label="Ana menü">
           <a className="brand" href="#main" aria-label={`${s.brand.name} · Ana sayfa`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={s.brand.logo} alt={s.brand.name} />
+            <img src={s.theme.mode === "light" ? s.brand.logoOnLight || s.brand.logo : s.brand.logo} alt={s.brand.name} data-mode={s.theme.mode ?? "dark"} />
           </a>
           <Ext className="liquid-btn" href={contactHref(s)}>
             <span className="liquid-fill" aria-hidden>
@@ -415,11 +416,12 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
   );
 }
 
-function themeVars(s: Site): CSSProperties {
+/** Theme → CSS custom properties on :root, so body, header and every grey follow it. */
+function themeCss(s: Site): string {
   const t = s.theme;
-  // Accent picked by the studio → buttons in that colour; otherwise white.
-  const cta = t.accent || "#fafafa";
-  return {
+  const light = t.mode === "light";
+  const cta = t.accent || (light ? t.ink : "#fafafa");
+  const vars: Record<string, string> = {
     "--bg": t.bg,
     "--surface": t.surface,
     "--ink": t.ink,
@@ -428,7 +430,19 @@ function themeVars(s: Site): CSSProperties {
     "--accent": cta,
     "--cta": cta,
     "--cta-ink": luminance(cta) > 0.45 ? "#111111" : "#ffffff",
-  } as CSSProperties;
+    "--scheme": light ? "light" : "dark",
+    "--photo-ground": light ? t.bg : "#030303",
+    "--photo-filter": t.photos === "color" ? "none" : "grayscale(1) contrast(1.04)",
+    "--photo-filter-hover": t.photos === "color" ? "saturate(1.08)" : "grayscale(0.85) contrast(1.06)",
+    "--photo-blend": light ? "normal" : "lighten",
+    "--texture-blend": light ? "multiply" : "screen",
+    "--texture-filter": light ? "invert(1)" : "none",
+    "--texture-opacity": light ? "0.18" : "0.35",
+  };
+  return Object.entries(vars)
+    .filter(([, v]) => /^[#\w\s().,%-]+$/.test(v))
+    .map(([k, v]) => `${k}:${v}`)
+    .join(";");
 }
 
 /** Relative luminance (0–1) of a #rrggbb colour. */
