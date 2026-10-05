@@ -1,0 +1,287 @@
+{
+  "brand": {
+    "name": "Payluna Pilates Studio",
+    "wordmark": "payluna",
+    "monogram": "PL.",
+    "logo": "/sites/payluna/logo.webp",
+    "mark": "/sites/payluna/logo.webp",
+    "originalLogo": "/sites/payluna/logo.webp",
+    "logoOnLight": "/sites/payluna/logo.webp",
+    "role": "Reformer & Mat Pilates Stüdyosu",
+    "tagline": "Bakırköy'de reformer ve mat pilates grup dersleri."
+  },
+  "theme": {
+    "bg": "#fbf8f3",
+    "surface": "#ffffff",
+    "ink": "#2b1640",
+    "muted": "#6d5c80",
+    "line": "#e4dbea",
+    "accent": "#6a2c9e",
+    "mode": "light",
+    "photos": "color"
+  },
+  "images": {
+    "hero": "/sites/payluna/hero.webp",
+    "heroAlt": "Payluna stüdyosunda ahşap reformerın yanında duran eğitmen",
+    "studio": "/sites/payluna/studio.webp",
+    "studioAlt": "Reformer üzerinde uzun bir esneme hareketi",
+    "detail": "/sites/payluna/detail.webp",
+    "detailAlt": "Reformer kayışlarını tutan eller",
+    "texture": "/images/texture.webp"
+  },
+  "location": {
+    "district": "Bakırköy",
+    "city": "İstanbul",
+    "address": "Cevizli Mah. Ebuziya Cd. No:17/5",
+    "mapQuery": "Payluna Pilates Studio, Bakırköy, İstanbul"
+  },
+  "contact": {
+    "whatsapp": "905546538865",
+    "instagram": "paylunapilates",
+    "phone": "05546538865"
+  },
+  "nav": [
+    {
+      "label": "Stüdyo",
+      "href": "#studyo"
+    },
+    {
+      "label": "Dersler",
+      "href": "#dersler"
+    },
+    {
+      "label": "Süreç",
+      "href": "#surec"
+    },
+    {
+      "label": "Yorumlar",
+      "href": "#yorumlar"
+    }
+  ],
+  "navCta": "Deneme dersi",
+  "hero": {
+    "label": "Reformer & Mat Pilates · Bakırköy",
+    "titleLines": [
+      "Esne, güçlen,",
+      "kendine dön."
+    ],
+    "description": "",
+    "primaryCta": "Deneme dersi ayırt",
+    "secondaryCta": "Dersleri keşfet",
+    "locationCta": "Yerimiz nerede?"
+  },
+  "strip": {
+    "lead": "Reformer pilates stüdyosu.",
+    "from": "Çekmeköy",
+    "to": "İstanbul",
+    "tail": "Grup · Özel · Düet"
+  },
+  "services": {
+    "label": "Dersler",
+    "titleLines": [
+      "Her bedenin",
+      "doğru bir temposu var."
+    ],
+    "intro": "Reformer ve mat pilates grup dersleri, eğitmen eşliğinde.",
+    "cta": "Bilgi al",
+    "items": [
+      {
+        "name": "Reformer grup",
+        "description": "Yaylı direnç ile tüm vücudu çalıştıran, eğitmen eşliğinde grup dersi.",
+        "image": "/sites/payluna/class-group.webp",
+        "alt": "Reformerlarda birlikte çalışan kadınlar"
+      },
+      {
+        "name": "Mat pilates",
+        "description": "Kendi vücut ağırlığınla core, denge ve esneklik odaklı mat dersi.",
+        "image": "/sites/payluna/class-mat.webp",
+        "alt": "Mat üzerinde yan plank yapan kadın"
+      }
+    ]
+  },
+  "about": {
+    "label": "Payluna Pilates Studio",
+    "titleLines": [
+      "Her hareket",
+      "nefesle başlar."
+    ],
+    "body": "Reformer, yaylı direnciyle kasları hem güçlendirir hem uzatır. Eklemlere binen yük düşük olduğu için yeni başlayanlar da düzenli çalışanlar da aynı alette, kendi temposunda ilerler.",
+    "note": "Eğitmen eşliği. Sana göre ayarlanan direnç.",
+    "tags": [
+      "Reformer",
+      "Core",
+      "Duruş"
+    ],
+    "link": "İlk ders nasıl geçer?"
+  },
+  "process": {
+    "label": "Süreç",
+    "titleLines": [
+      "İlk mesajdan",
+      "hayalindeki forma."
+    ],
+    "intro": "Beş adımda, seni tanıyarak ve hedefine göre ilerleyen bir süreç.",
+    "items": [
+      {
+        "title": "Bize mesaj gönderin",
+        "body": "WhatsApp'tan yazın; hedefinizi ve uygun olduğunuz saatleri kısaca paylaşın."
+      },
+      {
+        "title": "Demo ders randevusu ayarlayalım",
+        "body": "Size uygun gün ve saati birlikte belirleyelim, ders tipini seçelim."
+      },
+      {
+        "title": "Demo derse gelin",
+        "body": "Rahat bir kıyafet ve kaymaz çorap yeterli. Eğitmeniniz aleti ve hareketleri tanıtır."
+      },
+      {
+        "title": "Beraber çalışmaya başlayalım",
+        "body": "Hedefinize göre programınızı ve ders sıklığınızı birlikte planlayalım."
+      },
+      {
+        "title": "Hayalinizdeki fiziğe ulaşın",
+        "body": "Düzenli derslerle güçlenin ve esneyin; ilerlemenizi eğitmeninizle birlikte takip edin."
+      }
+    ]
+  },
+  "perspective": {
+    "label": "Yaklaşım",
+    "titleLines": [
+      "Her bedenin",
+      "kendi yolu var."
+    ],
+    "intro": "Ne kadar çalıştığın kadar, nasıl çalıştığın da önemlidir.",
+    "caption": "Payluna / Bakırköy",
+    "kicker": "REFORMER & MAT PİLATES · BAKIRKÖY",
+    "headline": "Sana göre kurulan",
+    "headlineEm": "dengeli bir pratik.",
+    "items": [
+      {
+        "title": "Kontrollü hareket",
+        "body": "Her egzersiz yavaş ve kontrollü yapılır; hız değil doğru form önceliklidir."
+      },
+      {
+        "title": "Ayarlanabilir direnç",
+        "body": "Yay direnci seviyene göre değişir; aynı hareket hem kolaylaşır hem zorlaşır."
+      },
+      {
+        "title": "Eğitmen eşliği",
+        "body": "Hareketlerin her derste takip edilir, gerektiğinde düzeltilir."
+      }
+    ],
+    "link": "Deneme dersini konuşalım"
+  },
+  "pricing": {
+    "label": "Paketler",
+    "titleLines": [
+      "Ritmine uygun",
+      "bir paket."
+    ],
+    "sample": false,
+    "periods": [
+      "Reformer grup",
+      "Mat pilates"
+    ],
+    "unit": "/ ay",
+    "cta": "Bu paketi sor",
+    "plans": [
+      {
+        "name": "Ayda 4 ders",
+        "note": "Haftada 1",
+        "prices": [
+          null,
+          null
+        ],
+        "popular": false
+      },
+      {
+        "name": "Ayda 8 ders",
+        "note": "Haftada 2",
+        "prices": [
+          null,
+          null
+        ],
+        "popular": true
+      },
+      {
+        "name": "Ayda 12 ders",
+        "note": "Haftada 3",
+        "prices": [
+          null,
+          null
+        ],
+        "popular": false
+      }
+    ]
+  },
+  "faq": {
+    "label": "İlk dersten önce",
+    "title": "Merak ettikleriniz.",
+    "intro": "İlk adım, bize yazmak.",
+    "items": [
+      {
+        "q": "Daha önce hiç pilates yapmadım, katılabilir miyim?",
+        "a": "Evet. Eğitmen ilk derste aleti tanıtır ve hareketleri seviyene göre ayarlar."
+      },
+      {
+        "q": "Derse gelirken ne getirmeliyim?",
+        "a": "Rahat, vücudu saran bir kıyafet ve kaymaz çorap yeterli."
+      },
+      {
+        "q": "Reformer ile mat pilates arasındaki fark ne?",
+        "a": "Reformer yaylı dirençle çalışır. Direnç ayarlanabildiği için hareketler hem kolaylaştırılabilir hem zorlaştırılabilir."
+      },
+      {
+        "q": "Ders saatlerini nasıl öğrenirim?",
+        "a": "WhatsApp'tan yazman yeterli, güncel ders programını paylaşırız."
+      }
+    ]
+  },
+  "booking": {
+    "label": "Deneme dersi",
+    "titleLines": [
+      "Bir ders.",
+      "Net bir başlangıç."
+    ],
+    "body": "Hedefini ve uygun olduğun saatleri konuşalım. İlk derste seni tanıyıp nasıl ilerleyeceğimizi birlikte belirleyelim.",
+    "cardKicker": "İLK DERS",
+    "cardTitleLines": [
+      "Kendine",
+      "zaman ayır."
+    ],
+    "steps": [
+      "Uygun olduğun gün ve saatleri paylaş.",
+      "Ders tipini birlikte seçelim.",
+      "İlk derste aleti ve hareketleri tanı."
+    ],
+    "button": "WhatsApp'tan yaz",
+    "note": "Grup derslerine rezervasyonla katılım. Pazartesi–Cuma 08:00–20:00, Cumartesi 10:00–17:00."
+  },
+  "marquee": [
+    "Reformer",
+    "Bakırköy",
+    "Mat",
+    "Denge",
+    "Nefes"
+  ],
+  "sections": [
+    "hero",
+    "services",
+    "about",
+    "process",
+    "perspective",
+    "pricing",
+    "faq",
+    "booking"
+  ],
+  "testimonials": {
+    "label": "Öğrencilerimiz",
+    "titleLines": [
+      "Stüdyodan",
+      "ilk elden."
+    ],
+    "intro": "Derslerimize katılanların kendi cümleleriyle.",
+    "sample": false,
+    "items": []
+  }
+}
