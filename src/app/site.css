@@ -73,7 +73,7 @@ body::after {
 }
 
 /* Header */
-.masthead { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 93%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-bottom: 1px solid color-mix(in srgb, var(--ink) 2%, transparent); }
+.masthead { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 93%, transparent); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); border-bottom: 1px solid color-mix(in srgb, var(--ink) 2%, transparent); }
 .nav { min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .brand { display: inline-flex; align-items: center; gap: 12px; font-size: 27px; font-weight: 700; letter-spacing: -1.5px; white-space: nowrap; line-height: 1.2; }
 .brand img { width: auto; height: 50px; }
@@ -635,7 +635,7 @@ body::after {
   position: fixed; left: 50%; bottom: 16px; z-index: 50; transform: translateX(-50%);
   display: flex; align-items: center; gap: 16px; width: min(640px, calc(100% - 24px));
   padding: 10px 10px 10px 20px; border-radius: 999px; border: 1px solid rgba(255, 0, 255, 0.45);
-  background: rgba(10, 6, 8, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  background: rgba(10, 6, 8, 0.88); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   box-shadow: 0 0 40px rgba(255, 0, 255, 0.25); font-family: var(--font-nunito), system-ui, sans-serif;
 }
 .pv-bar p { flex: 1; margin: 0; font-size: 13px; font-weight: 700; color: rgba(255, 255, 255, 0.7); line-height: 1.35; }
@@ -724,5 +724,5 @@ body::after {
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 85%, transparent), 0 18px 40px -26px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 /* Real blur only on the few static panels (moving cards over a moving texture cost phones too much). */
-.site-light :is(.trainer, .pi, .booking-card, .button-ghost) { backdrop-filter: blur(14px) saturate(1.25); -webkit-backdrop-filter: blur(14px) saturate(1.25); }
+.site-light :is(.trainer, .pi, .booking-card, .button-ghost) { -webkit-backdrop-filter: blur(14px) saturate(1.25); backdrop-filter: blur(14px) saturate(1.25); }
 .site-light .pi-plan { background: color-mix(in srgb, var(--surface) 40%, transparent); }

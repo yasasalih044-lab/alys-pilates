@@ -27,7 +27,7 @@ export function SilkBackground({ bg, tint }: { bg: string; tint: string }) {
 
     const base = rgb(bg);
     // Folds in a soft shade of the studio colour, crests a touch lighter than the page.
-    const low = mix(base, rgb(tint), 0.3);
+    const low = mix(base, rgb(tint), 0.4);
     const high = mix(base, [255, 255, 255], 0.55);
     const SCALE = 8;
     let img: ImageData;
