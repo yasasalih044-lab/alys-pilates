@@ -601,50 +601,9 @@ body::after {
   .tm-row[data-reverse] .tm-track { animation-direction: reverse !important; }
 }
 
-/* Header: logo + one CTA. Port of 21st "Liquid Button" (good-listener). */
+/* Header: logo + one CTA. */
 .nav-right { display: none; }
-.liquid-btn {
-  position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center;
-  height: 48px; padding: 0 24px; overflow: hidden; border-radius: 14px; white-space: nowrap;
-  font-size: 14px; font-weight: 700; color: var(--ink); background: color-mix(in srgb, var(--ink) 2%, var(--bg));
-  border: 1px solid color-mix(in srgb, var(--cta) 32%, transparent);
-  box-shadow: 0 12px 32px -14px color-mix(in srgb, var(--cta) 80%, transparent);
-  transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease, color 400ms ease;
-  user-select: none;
-}
-.liquid-fill {
-  position: absolute; left: -25%; right: -25%; top: 96%; height: 190%; z-index: 0;
-  background: linear-gradient(180deg, var(--cta), color-mix(in srgb, var(--cta) 70%, #000));
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.liquid-wave { position: absolute; top: 0; left: 50%; width: 120%; aspect-ratio: 1; border-radius: 43%; background: color-mix(in srgb, var(--bg) 95%, transparent); transform: translate(-50%, -97%); animation: liquid-wave 7s linear infinite; }
-.liquid-wave-2 { width: 112%; border-radius: 47%; background: color-mix(in srgb, var(--bg) 45%, transparent); animation-duration: 5s; animation-direction: reverse; }
-.liquid-bubble { position: absolute; bottom: 16px; left: 22%; width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--ink) 70%, transparent); opacity: 0; animation: liquid-bubble 1.8s ease-in 120ms infinite; }
-.liquid-bubble:nth-child(4) { bottom: 8px; left: 48%; width: 8px; height: 8px; animation-duration: 2.2s; animation-delay: 520ms; }
-.liquid-bubble:nth-child(5) { bottom: 20px; left: 72%; width: 4px; height: 4px; animation-duration: 1.6s; animation-delay: 860ms; }
-.liquid-label { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; }
-.liquid-label svg { width: 16px; }
-.liquid-shine { position: absolute; left: 20px; right: 20px; top: 0; height: 1px; z-index: 2; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ink) 60%, transparent), transparent); }
-.liquid-btn:active { transform: translateY(1px) scale(0.98); }
-.liquid-btn:focus-visible { outline: 2px solid var(--cta); outline-offset: 3px; }
-.liquid-btn:hover, .liquid-btn:focus-visible { color: var(--cta-ink); border-color: color-mix(in srgb, var(--cta) 70%, transparent); box-shadow: 0 16px 40px -12px color-mix(in srgb, var(--cta) 95%, transparent); }
-.liquid-btn:hover .liquid-fill, .liquid-btn:focus-visible .liquid-fill { transform: translateY(-58%); }
-.liquid-btn:hover .liquid-bubble { opacity: 1; }
-@keyframes liquid-wave { from { transform: translate(-50%, -97%) rotate(0deg); } to { transform: translate(-50%, -97%) rotate(360deg); } }
-@keyframes liquid-bubble { 0% { opacity: 0; transform: translateY(0) scale(0.7); } 18% { opacity: 0.75; } 100% { opacity: 0; transform: translateY(-4.5rem) scale(1.15); } }
-/* Touch screens have no hover: show the button already filled, waves still rolling. */
-@media (hover: none) {
-  .liquid-btn { color: var(--cta-ink); border-color: color-mix(in srgb, var(--cta) 70%, transparent); }
-  .liquid-fill { transform: translateY(-58%); }
-}
-@media (max-width: 640px) {
-  .nav { flex-wrap: nowrap; }
-  .liquid-btn { height: 44px; padding: 0 18px; font-size: 13px; border-radius: 12px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .liquid-fill { transition: none; }
-  .liquid-bubble { display: none; }
-}
+@media (max-width: 640px) { .nav { flex-wrap: nowrap; } }
 
 /* Wide white wordmark logo for the dark template. */
 .brand img { width: auto; height: 34px; }
@@ -704,10 +663,6 @@ body::after {
 :root:has(.brand img[data-mode="light"]) { --shimmer: color-mix(in srgb, var(--accent) 55%, #ffffff); }
 /* Header is opaque enough that captions don't show through it. */
 .masthead { background: color-mix(in srgb, var(--bg) 98%, transparent); }
-/* Light pages: the liquid CTA starts filled (brand colour), like on touch screens. */
-:root:has(.brand img[data-mode="light"]) .liquid-btn { color: var(--cta-ink); border-color: var(--cta); }
-:root:has(.brand img[data-mode="light"]) .liquid-fill { transform: translateY(-58%); }
-:root:has(.brand img[data-mode="light"]) .liquid-wave { background: color-mix(in srgb, var(--cta) 0%, transparent); }
 /* Principle numbers in a fixed column so titles line up. */
 .principle > span { flex: 0 0 22px; font-variant-numeric: tabular-nums; }
 
@@ -743,3 +698,31 @@ body::after {
 @media (min-width: 900px) {
   .gallery-strip { width: min(1200px, calc(100% - 96px)); margin-inline: auto; padding: 0; grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); overflow: visible; }
 }
+
+/* ---- 2026-10-06 -------------------------------------------------------- */
+/* Hero title: background-clip text only paints inside the line box, so the
+   tails of g/y/ş were cut off. Give the box room below (and above for İ). */
+.shimmer-line { padding-block: 0.06em 0.16em; margin-block: -0.06em -0.16em; }
+
+/* Header CTA = the hero's trial button. */
+.nav-button { flex: none; min-height: 48px; gap: 16px; padding-left: 20px; }
+@media (max-width: 640px) { .nav-button { min-height: 44px; gap: 10px; padding: 5px 5px 5px 16px; font-size: 12px; } .nav-button > span { width: 32px; height: 32px; } }
+
+/* Edge blur while scrolling (bottom of the screen + just under the header). */
+.edge-blur { position: fixed; left: 0; right: 0; z-index: 9; pointer-events: none; isolation: isolate; }
+.edge-blur > div { position: absolute; inset: 0; }
+.edge-blur-bottom { bottom: 0; }
+.edge-blur-under { position: absolute; top: 100%; }
+
+/* Light pages: animated silk in the studio colour behind everything, glass elements on top. */
+.silk-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -3; pointer-events: none; display: block; }
+.site-light .texture { display: none; }
+.site-light .masthead { background: color-mix(in srgb, var(--bg) 55%, transparent); border-bottom-color: color-mix(in srgb, #fff 60%, transparent); }
+.site-light :is(.tm-card, .trainer, .pi, .pi-plan, .pi-toggle, .service-card, .booking-card, .journey-dot, .gallery-item, .button-ghost) {
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+  border-color: color-mix(in srgb, #fff 75%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 85%, transparent), 0 18px 40px -26px color-mix(in srgb, var(--ink) 45%, transparent);
+}
+/* Real blur only on the few static panels (moving cards over a moving texture cost phones too much). */
+.site-light :is(.trainer, .pi, .booking-card, .button-ghost) { backdrop-filter: blur(14px) saturate(1.25); -webkit-backdrop-filter: blur(14px) saturate(1.25); }
+.site-light .pi-plan { background: color-mix(in srgb, var(--surface) 40%, transparent); }

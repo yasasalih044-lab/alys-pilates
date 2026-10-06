@@ -12,6 +12,8 @@ import { SiteBehavior } from "@/components/site-behavior";
 import { ScrollSteps } from "@/components/ui/scroll-steps";
 import { TestimonialMarquee } from "@/components/ui/testimonial-marquee";
 import { PricingInteraction } from "@/components/ui/pricing-interaction";
+import { EdgeBlur } from "@/components/ui/edge-blur";
+import { SilkBackground } from "@/components/ui/silk-background";
 import "@/app/site.css";
 
 function Star() {
@@ -424,9 +426,11 @@ function Marquee({ s }: { s: Site }) {
 
 /** Renders one studio site from its JSON. Theme colours are scoped to this wrapper. */
 export default function SitePage({ s, children }: { s: Site; children?: ReactNode }) {
+  const light = s.theme.mode === "light";
   return (
-    <div className="site-root">
+    <div className={`site-root${light ? " site-light" : ""}`}>
       <style>{`:root{${themeCss(s)}}`}</style>
+      {light ? <SilkBackground bg={s.theme.bg} tint={s.theme.accent || s.theme.ink} /> : null}
       <div className="texture" aria-hidden style={{ "--texture": `url(${s.images.texture})` } as CSSProperties} />
       <a className="skip" href="#main">
         İçeriğe geç
@@ -437,20 +441,15 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={s.theme.mode === "light" ? s.brand.logoOnLight || s.brand.logo : s.brand.logo} alt={s.brand.name} data-mode={s.theme.mode ?? "dark"} />
           </a>
-          <Ext className="liquid-btn" href={contactHref(s)}>
-            <span className="liquid-fill" aria-hidden>
-              <span className="liquid-wave" />
-              <span className="liquid-wave liquid-wave-2" />
-              <span className="liquid-bubble" />
-              <span className="liquid-bubble" />
-              <span className="liquid-bubble" />
+          {/* Same button as the hero's: one trial-lesson button across the page. */}
+          <Ext className="button nav-button" href={contactHref(s)}>
+            {s.hero.primaryCta}
+            <span>
+              <ArrowUpRight />
             </span>
-            <span className="liquid-label">
-              {s.navCta} <ArrowUpRight />
-            </span>
-            <span className="liquid-shine" aria-hidden />
           </Ext>
         </nav>
+        <EdgeBlur position="top" height={36} className="edge-blur-under" />
       </header>
 
       <main id="main">
@@ -464,6 +463,7 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
       <Marquee s={s} />
 
 
+      <EdgeBlur position="bottom" height={64} />
       <SiteBehavior />
       {children}
     </div>
@@ -488,7 +488,8 @@ function themeCss(s: Site): string {
     "--cta-ink": 1.05 / (luminance(cta) + 0.05) >= (luminance(cta) + 0.05) / (luminance(dark) + 0.05) ? "#ffffff" : dark,
     "--scheme": light ? "light" : "dark",
     // Colour photos fade into the page itself; B&W ones into near-black (the ALYS look).
-    "--photo-ground": light || t.photos === "color" ? t.bg : "#030303",
+    // Light pages sit on the silk texture, so photos fade to transparent instead of a flat colour.
+    "--photo-ground": light ? "transparent" : t.photos === "color" ? t.bg : "#030303",
     "--photo-filter": t.photos === "color" ? "none" : "grayscale(1) contrast(1.04)",
     "--photo-filter-hover": t.photos === "color" ? "saturate(1.08)" : "grayscale(0.85) contrast(1.06)",
     "--photo-blend": light || t.photos === "color" ? "normal" : "lighten",
