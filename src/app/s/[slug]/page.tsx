@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${s.brand.name} | ${s.brand.role} · ${s.location.district}`,
     description: s.brand.tagline,
-    icons: { icon: s.brand.mark || s.brand.logo },
+    icons: { icon: s.brand.icon || s.brand.mark || s.brand.logo },
     // Previews are sales drafts, not public pages yet.
     robots: s._meta?.preview ? { index: false, follow: false } : undefined,
   };

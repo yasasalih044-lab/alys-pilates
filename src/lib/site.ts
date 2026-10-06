@@ -17,6 +17,8 @@ export type Site = {
     originalLogo: string;
     /** Full-colour version for light backgrounds; `logo` is the white one for this dark template. */
     logoOnLight: string;
+    /** Square PNG for the browser tab (webp favicons don't show everywhere). */
+    icon?: string;
     role: string;
     tagline: string;
   };

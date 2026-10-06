@@ -4,6 +4,7 @@ import {
   asReference,
   colourLogoOnTransparent,
   fallbackCopy,
+  galleryImage,
   generateCopy,
   logoOnDark,
   heroImage,
@@ -45,13 +46,6 @@ export async function generateSite(
   await Promise.all(rooms.map((r, i) => saveUpload(slug, `room-${i}.jpg`, r)));
   await Promise.all(files.trainers.map(async (t, i) => (t ? saveUpload(slug, `trainer-src-${i}.jpg`, await asReference(t)) : undefined)));
 
-  // Owner photos also go on the page: centre 4:5 crop (drops phone-story bars), phone-sized.
-  const gallery = await Promise.all(
-    files.rooms.slice(0, 3).map(async (r, i) =>
-      saveUpload(slug, `gallery-${i}-${v}.webp`, await sharp(r).rotate().resize(600, 750, { fit: "cover", position: "centre" }).webp({ quality: 76 }).toBuffer()),
-    ),
-  );
-
   const palette = await paletteFromLogo(logo, rooms);
   const mode = palette.theme.mode ?? "dark";
   const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
@@ -65,21 +59,32 @@ export async function generateSite(
     trainers: input.trainers,
     sampleReviews: input.reviews.length === 0,
   };
-  const [copy, logos, hero, trainerPhotos] = await Promise.all([
+  const [copy, logos, hero, trainerPhotos, gallery] = await Promise.all([
     generateCopy(copyInput).catch((e) => {
       console.error("copy generation failed, using approved fallback copy", (e as Error).message);
       return fallbackCopy(copyInput);
     }),
     (async () => {
-      const onLight = await saveUpload(slug, `logo-colour-${v}.webp`, await colourLogoOnTransparent(logo));
-      if (mode === "light") return { logo: onLight, onLight };
+      const colour = await colourLogoOnTransparent(logo, palette.framed);
+      const onLight = await saveUpload(slug, `logo-colour-${v}.webp`, colour);
+      // Tab icon: the same colour logo, centred on the page colour.
+      const icon = await saveUpload(
+        slug,
+        `icon-${v}.png`,
+        await sharp(await sharp(colour).resize(84, 84, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer())
+          .extend({ top: 6, bottom: 6, left: 6, right: 6, background: palette.theme.bg })
+          .flatten({ background: palette.theme.bg })
+          .png()
+          .toBuffer(),
+      );
+      if (mode === "light") return { logo: onLight, onLight, icon };
       const white = await whiteLogo(logo, "image/png")
         .then((w) => saveUpload(slug, `logo-white-${v}.webp`, w))
         .catch(async (e) => {
           console.error("white logo failed, keying out the logo ground instead", (e as Error).message);
           return saveUpload(slug, `logo-dark-${v}.webp`, await logoOnDark(logo));
         });
-      return { logo: white, onLight };
+      return { logo: white, onLight, icon };
     })(),
     heroImage({ mode, outfit, colours: palette.names, rooms })
       .then((img) => saveUpload(slug, `hero-${v}.webp`, img))
@@ -97,9 +102,19 @@ export async function generateSite(
         return saveUpload(slug, `trainer-${i}-${v}.webp`, img);
       }),
     ),
+    // "Stüdyomuz": each owner photo re-shot in our look; the photo itself if that fails.
+    Promise.all(
+      rooms.map(async (r, i) => {
+        const img = await galleryImage(r, i, { mode, outfit }).catch(async (e) => {
+          console.error(`gallery ${i} failed, using the photo`, (e as Error).message);
+          return sharp(r).resize(600, 750, { fit: "cover", position: "centre" }).webp({ quality: 76 }).toBuffer();
+        });
+        return saveUpload(slug, `gallery-${i}-${v}.webp`, img);
+      }),
+    ),
   ]);
 
-  const site = buildSite(input, copy, { theme: palette.theme, logo: logos.logo, logoOnLight: logos.onLight, hero, trainerPhotos, gallery });
+  const site = buildSite(input, copy, { theme: palette.theme, logo: logos.logo, logoOnLight: logos.onLight, icon: logos.icon, hero, trainerPhotos, gallery });
   const stored: StoredSite = {
     ...site,
     _meta: {

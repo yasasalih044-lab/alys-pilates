@@ -18,6 +18,8 @@ export type BrandPalette = {
   names: string[];
   /** The logo sits on a light ground (keep the colour logo on a light site). */
   lightGround: boolean;
+  /** The logo is a badge on a different-coloured square: cut that frame away. */
+  framed: boolean;
 };
 
 const hex = ([r, g, b]: RGB) => `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
@@ -60,18 +62,6 @@ const contrast = (a: RGB, b: RGB) => {
   const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
   return (x + 0.05) / (y + 0.05);
 };
-
-/** Darken until white text reads on it (buttons). */
-function forWhiteText(c: RGB): RGB {
-  const { h, s } = toHsl(c);
-  let { l } = toHsl(c);
-  let out = c;
-  while (contrast(out, [255, 255, 255]) < 4.5 && l > 0.08) {
-    l -= 0.03;
-    out = fromHsl(h, s, l);
-  }
-  return out;
-}
 
 export function colorName([r, g, b]: RGB) {
   const { h, s, l } = toHsl([r, g, b]);
@@ -124,6 +114,35 @@ async function dominantColours(img: Buffer, ground: RGB | null, minS: number) {
   return { colours: distinct, meanLum: count ? lum / count : 0.5 };
 }
 
+const dist = (a: RGB, b: RGB) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+
+/** Largest flat colour area of a raw image (4-bit buckets) and its share of the pixels. */
+function mostFrequent(data: Buffer, channels: number) {
+  const buckets = new Map<string, { sum: RGB; n: number }>();
+  for (let i = 0; i < data.length; i += channels) {
+    const c: RGB = [data[i], data[i + 1], data[i + 2]];
+    const key = c.map((v) => v >> 4).join(",");
+    const b = buckets.get(key) ?? { sum: [0, 0, 0], n: 0 };
+    b.sum = [b.sum[0] + c[0], b.sum[1] + c[1], b.sum[2] + c[2]];
+    b.n++;
+    buckets.set(key, b);
+  }
+  const best = [...buckets.values()].sort((x, y) => y.n - x.n)[0];
+  return { colour: best.sum.map((v) => v / best.n) as RGB, share: best.n / (data.length / channels) };
+}
+
+/** A pale brand colour (pastel pink on white) → the same hue, vivid enough to be a button. */
+function deepen(c: RGB, bg: RGB): RGB {
+  const { h, s } = toHsl(c);
+  let { l } = toHsl(c);
+  let out = fromHsl(h, Math.max(s, 0.62), l);
+  while (contrast(out, bg) < 2.4 && l > 0.2) {
+    l -= 0.02;
+    out = fromHsl(h, Math.max(s, 0.62), l);
+  }
+  return out;
+}
+
 /** Lighten until it stands out on a dark page (buttons, highlights). */
 function forDarkPage(c: RGB, bg: RGB): RGB {
   const { h, s } = toHsl(c);
@@ -153,8 +172,13 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
     return [data[i], data[i + 1], data[i + 2]];
   };
   const corners = [px(1, 1), px(info.width - 2, 1), px(1, info.height - 2), px(info.width - 2, info.height - 2)];
-  const ground = mix(mix(corners[0], corners[1], 0.5), mix(corners[2], corners[3], 0.5), 0.5);
+  const frame = mix(mix(corners[0], corners[1], 0.5), mix(corners[2], corners[3], 0.5), 0.5);
+  // The ground is the colour the logo is drawn on: usually the corners, but a
+  // badge (white circle on a dark square, like Perifit) is drawn on the badge.
+  const top = mostFrequent(data, info.channels);
+  const ground = top.share > 0.35 && dist(top.colour, frame) > 60 ? top.colour : frame;
   let lightGround = luminance(ground) > 0.6;
+  const framed = ground !== frame;
   let transparent = false;
   // A transparent logo drawn in white is meant for dark pages, even though it
   // was flattened onto white above.
@@ -173,7 +197,7 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
       n++;
     }
     transparent = clear > (a.length / ai.channels) * 0.2;
-    if (n && lum / n > 0.7) lightGround = false;
+    if (transparent && n && lum / n > 0.7) lightGround = false;
   }
 
   const logoColours = (await dominantColours(logo, ground, 0.22)).colours;
@@ -191,20 +215,24 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
     if (!main) {
       return {
         lightGround,
+      framed,
         names: ["black", "white"],
         theme: { bg: "#faf8f5", surface: "#ffffff", ink: "#1c1b1a", muted: "#77736e", line: "#e3dfd9", accent: "", mode: "light", photos: "color" },
       };
     }
     const { h, s } = toHsl(main);
     const ink = fromHsl(h, Math.min(0.55, s), 0.17);
-    const accent = forWhiteText(main);
-    const bg = mix([251, 249, 245], main, 0.035);
+    // The owner's colour as is (button text switches to dark/white by contrast);
+    // only a colour that would vanish on the page gets darkened.
+    const accent = contrast(main, ground) < 1.8 ? deepen(main, ground) : main;
+    const bg = ground;
     return {
       lightGround,
+      framed,
       names,
       theme: {
         bg: hex(bg),
-        surface: "#ffffff",
+        surface: hex(luminance(bg) > 0.9 ? mix(bg, main, 0.03) : mix(bg, [255, 255, 255], 0.5)),
         ink: hex(ink),
         muted: hex(mix(ink, bg, 0.42)),
         line: hex(mix(ink, bg, 0.86)),
@@ -219,13 +247,16 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
   // or faintly with the brand colour; accent = the logo colour, lifted to read.
   const g = toHsl(ground);
   const tint = !transparent && g.s > 0.15 && g.l < 0.35 ? ground : brand[0];
-  const bg: RGB = tint ? fromHsl(toHsl(tint).h, Math.min(0.55, Math.max(0.25, toHsl(tint).s)), 0.075) : [9, 9, 9];
-  const surface: RGB = tint ? fromHsl(toHsl(tint).h, Math.min(0.45, Math.max(0.2, toHsl(tint).s)), 0.115) : [20, 20, 20];
+  // An opaque logo ground is the page colour as is ("logonun zemini = sitenin zemini").
+  const own = !transparent && luminance(ground) < 0.2;
+  const bg: RGB = own ? ground : tint ? fromHsl(toHsl(tint).h, Math.min(0.55, Math.max(0.25, toHsl(tint).s)), 0.075) : [9, 9, 9];
+  const surface: RGB = own ? mix(ground, [255, 255, 255], 0.05) : tint ? fromHsl(toHsl(tint).h, Math.min(0.45, Math.max(0.2, toHsl(tint).s)), 0.115) : [20, 20, 20];
   const accentBase = [...brand].sort((x, y) => toHsl(y).s - toHsl(x).s)[0];
   const accent = accentBase ? forDarkPage(accentBase, bg) : null;
   const ink = accent ? mix([247, 248, 250], accent, 0.03) : ([250, 250, 250] as RGB);
   return {
     lightGround,
+    framed,
     names: names.length ? names : ["black", "white"],
     theme: {
       bg: hex(bg),

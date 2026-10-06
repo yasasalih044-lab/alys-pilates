@@ -22,6 +22,7 @@ export type BuilderAssets = {
   theme: Site["theme"];
   logo: string;
   logoOnLight: string;
+  icon?: string;
   hero?: string;
   trainerPhotos: (string | undefined)[];
   /** Owner's studio photos, cropped for the "Stüdyomuz" strip. */
@@ -85,6 +86,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
       mark: assets.logoOnLight,
       originalLogo: assets.logoOnLight,
       logoOnLight: assets.logoOnLight,
+      icon: assets.icon,
       role: "Reformer Pilates Stüdyosu",
       tagline: copy.tagline,
     },

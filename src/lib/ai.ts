@@ -287,8 +287,9 @@ export async function trainerPortrait(photo: Buffer): Promise<Buffer> {
 /* Light site: keep the colour logo, only its white ground becomes alpha (no AI). */
 /* ------------------------------------------------------------------ */
 
-export async function colourLogoOnTransparent(logo: Buffer): Promise<Buffer> {
+export async function colourLogoOnTransparent(logo: Buffer, framed = false): Promise<Buffer> {
   const { data, info } = await sharp(logo).flatten({ background: "#ffffff" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  if (framed) whitenFrame(data, info.width, info.height);
   for (let i = 0; i < data.length; i += 4) {
     const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
     let a = 255 - Math.min(r, g, b);
@@ -304,6 +305,73 @@ export async function colourLogoOnTransparent(logo: Buffer): Promise<Buffer> {
     data[i + 3] = a;
   }
   return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
+}
+
+/**
+ * Badge logos (white circle on a dark square): flood-fill the outer frame from
+ * the image edges and paint it white, so only the badge's own drawing stays.
+ * The logo itself is not touched.
+ */
+function whitenFrame(data: Buffer, w: number, h: number) {
+  const at = (x: number, y: number) => (y * w + x) * 4;
+  const c0 = [data[0], data[1], data[2]];
+  const near = (i: number) => Math.hypot(data[i] - c0[0], data[i + 1] - c0[1], data[i + 2] - c0[2]) < 70;
+  const seen = new Uint8Array(w * h);
+  const stack: number[] = [];
+  for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
+  for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+  while (stack.length) {
+    const p = stack.pop()!;
+    if (seen[p]) continue;
+    seen[p] = 1;
+    const x = p % w;
+    const y = (p - x) / w;
+    if (!near(at(x, y))) continue;
+    data.fill(255, at(x, y), at(x, y) + 3);
+    if (x > 0) stack.push(p - 1);
+    if (x < w - 1) stack.push(p + 1);
+    if (y > 0) stack.push(p - w);
+    if (y < h - 1) stack.push(p + w);
+  }
+  // The badge's anti-aliased rim (grey between frame and badge) would stay as a
+  // faint ring: whiten a few pixels past the frame too.
+  const r = Math.max(2, Math.round(Math.min(w, h) / 60));
+  const frame = seen.map((v, p) => (v && data[p * 4] === 255 && data[p * 4 + 1] === 255 && data[p * 4 + 2] === 255 ? 1 : 0));
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      if (frame[y * w + x]) continue;
+      search: for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++) {
+          const xx = x + dx;
+          const yy = y + dy;
+          if (xx >= 0 && yy >= 0 && xx < w && yy < h && frame[yy * w + xx]) {
+            data.fill(255, at(x, y), at(x, y) + 3);
+            break search;
+          }
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Gallery: the owner's photos, re-shot in our editorial look.         */
+/* ------------------------------------------------------------------ */
+
+const GALLERY_SHOTS = [
+  "A wide interior photograph of this studio, tidy and inviting, the reformer machines neatly lined up, nobody in the frame.",
+  "A woman doing a calm reformer pilates exercise in this studio, side view, wearing a modest long-sleeve sports top and full-length leggings in {outfit}.",
+  "A close-up detail of a reformer in this studio: carriage, leather straps and springs, shallow depth of field, soft background of the room.",
+];
+
+export async function galleryImage(room: Buffer, shot: number, opts: { mode: "light" | "dark"; outfit: string }): Promise<Buffer> {
+  const look =
+    opts.mode === "light"
+      ? "Bright, airy editorial colour photograph with soft natural daylight; calm, clean and premium."
+      : "Cinematic editorial colour photograph with a calm, premium evening mood and the studio's own lighting.";
+  const room_ =
+    "The attached photo is from this studio: keep its real walls, floor, windows, light and equipment. If it does not show the room, create a matching boutique reformer pilates studio in its colours. Ignore phone-app overlays, text, neon signs with words, stickers and logos.";
+  const subject = GALLERY_SHOTS[shot % GALLERY_SHOTS.length].replace("{outfit}", opts.outfit);
+  const rules = "Vertical 4:5 photo, realistic, fully clothed, wholesome. No text, no logos, no watermark.";
+  return forPhones(await imageCall(`${look} ${room_} ${subject} ${rules}`, SIZES.trainer, [room]), 600);
 }
 
 /* ------------------------------------------------------------------ */
