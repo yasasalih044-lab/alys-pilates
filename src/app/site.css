@@ -714,15 +714,25 @@ body::after {
 .edge-blur-bottom { bottom: 0; }
 .edge-blur-under { position: absolute; top: 100%; }
 
-/* Light pages: animated silk in the studio colour behind everything, glass elements on top. */
-.silk-bg { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: -3; pointer-events: none; display: block; }
-.site-light .texture { display: none; }
-.site-light .masthead { background: color-mix(in srgb, var(--bg) 55%, transparent); border-bottom-color: color-mix(in srgb, #fff 60%, transparent); }
-.site-light :is(.tm-card, .trainer, .pi, .pi-plan, .pi-toggle, .service-card, .booking-card, .journey-dot, .gallery-item, .button-ghost) {
-  background: color-mix(in srgb, var(--surface) 52%, transparent);
-  border-color: color-mix(in srgb, #fff 75%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 85%, transparent), 0 18px 40px -26px color-mix(in srgb, var(--ink) 45%, transparent);
+/* Light pages: silk in the studio colour behind everything, glass elements on top. */
+/* Oversized and fixed in large-viewport units, so the iOS address bar never resizes it;
+   it drifts with a GPU transform only. */
+.silk-bg {
+  position: fixed; left: -15vw; top: -15lvh; width: 130vw; height: 130lvh; z-index: -3;
+  pointer-events: none; display: block; will-change: transform;
+  animation: silk-drift 36s ease-in-out infinite alternate;
 }
-/* Real blur only on the few static panels (moving cards over a moving texture cost phones too much). */
-.site-light :is(.trainer, .pi, .booking-card, .button-ghost) { -webkit-backdrop-filter: blur(14px) saturate(1.25); backdrop-filter: blur(14px) saturate(1.25); }
-.site-light .pi-plan { background: color-mix(in srgb, var(--surface) 40%, transparent); }
+@keyframes silk-drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(-8vw, -6lvh, 0) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .silk-bg { animation: none; } }
+.site-light .texture { display: none; }
+.site-light .masthead { background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom-color: color-mix(in srgb, #fff 60%, transparent); }
+/* Glass that still reads: mostly opaque white-ish panels, bright rim, soft shadow.
+   No backdrop-filter on cards: over a moving background every blurred card is
+   re-blurred each frame, which is what made iPhones stutter. */
+.site-light :is(.tm-card, .trainer, .pi, .pi-plan, .pi-toggle, .service-card, .booking-card, .journey-dot, .gallery-item, .button-ghost) {
+  background: color-mix(in srgb, var(--surface) 84%, transparent);
+  border-color: color-mix(in srgb, #fff 90%, transparent);
+  box-shadow: inset 0 1px 0 #fff, 0 18px 40px -24px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.site-light .tm-card { background: color-mix(in srgb, var(--surface) 92%, transparent); border-color: color-mix(in srgb, var(--ink) 10%, #fff); }
+.site-light .pi-plan { background: color-mix(in srgb, var(--surface) 70%, transparent); }

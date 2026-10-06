@@ -3,11 +3,14 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Light pages: slow "silk" texture behind everything (port of 21st
+ * Light pages: "silk" texture behind everything (port of 21st
  * "silk-background-animation"), recoloured to the studio's own colour.
- * Phone-friendly: drawn at 1/8 resolution and scaled up by CSS (silk is soft,
- * so it stays smooth), ~24 fps, paused in background tabs, one still frame
- * with reduced motion.
+ *
+ * Phones first: the silk is drawn ONCE (at 1/8 resolution, scaled up by CSS —
+ * silk is soft, so it stays smooth) and then drifts with a CSS transform,
+ * which the GPU moves without repainting. No per-frame JavaScript, and no
+ * redraw when iOS Safari's address bar resizes the viewport (that redraw was
+ * the blink).
  */
 type RGB = [number, number, number];
 
@@ -29,23 +32,21 @@ export function SilkBackground({ bg, tint }: { bg: string; tint: string }) {
     // Folds in a soft shade of the studio colour, crests a touch lighter than the page.
     const low = mix(base, rgb(tint), 0.4);
     const high = mix(base, [255, 255, 255], 0.55);
-    const SCALE = 8;
-    let img: ImageData;
 
-    const resize = () => {
-      canvas.width = Math.ceil(window.innerWidth / SCALE);
-      canvas.height = Math.ceil(window.innerHeight / SCALE);
-      img = ctx.createImageData(canvas.width, canvas.height);
-    };
-
-    const draw = (t: number) => {
-      const { width: w, height: h } = canvas;
+    const draw = () => {
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.ceil(rect.width / 8);
+      const h = Math.ceil(rect.height / 8);
+      canvas.width = w;
+      canvas.height = h;
+      const img = ctx.createImageData(w, h);
       const d = img.data;
+      const aspect = h / w;
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           const u = (x / w) * 2;
-          const v = (y / h) * 2 + 0.03 * Math.sin(8 * u - t);
-          const p = 0.6 + 0.4 * Math.sin(5 * (u + v + Math.cos(3 * u + 5 * v) + 0.02 * t) + Math.sin(20 * (u + v - 0.1 * t)));
+          const v = (y / h) * 2 * aspect * 0.6 + 0.03 * Math.sin(8 * u);
+          const p = 0.6 + 0.4 * Math.sin(5 * (u + v + Math.cos(3 * u + 5 * v)) + Math.sin(20 * (u + v)));
           const k = Math.min(1, Math.max(0, p));
           const i = (y * w + x) * 4;
           d[i] = low[0] + (high[0] - low[0]) * k;
@@ -57,25 +58,16 @@ export function SilkBackground({ bg, tint }: { bg: string; tint: string }) {
       ctx.putImageData(img, 0, 0);
     };
 
-    resize();
-    window.addEventListener("resize", resize);
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let t = 0;
-    let last = 0;
-    let raf = 0;
-    const loop = (now: number) => {
-      raf = requestAnimationFrame(loop);
-      if (document.hidden || now - last < 42) return;
-      t += ((now - (last || now)) / 1000) * 1.2;
-      last = now;
-      draw(t);
+    draw();
+    // Only a real width change (rotation) redraws; height changes from the URL bar are ignored.
+    let width = window.innerWidth;
+    const onResize = () => {
+      if (window.innerWidth === width) return;
+      width = window.innerWidth;
+      draw();
     };
-    if (still) draw(0);
-    else raf = requestAnimationFrame(loop);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, [bg, tint]);
 
   return <canvas ref={ref} className="silk-bg" aria-hidden />;

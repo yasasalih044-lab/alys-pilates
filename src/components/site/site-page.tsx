@@ -95,9 +95,6 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
                 <MapPin />
               </span>
             </Ext>
-            <a className="inline-link" href={s.sections.includes("services") ? "#dersler" : "#paketler"}>
-              {s.hero.secondaryCta} <ArrowUpRight />
-            </a>
           </div>
         </div>
         <figure className="hero-portrait">
@@ -441,13 +438,6 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={s.theme.mode === "light" ? s.brand.logoOnLight || s.brand.logo : s.brand.logo} alt={s.brand.name} data-mode={s.theme.mode ?? "dark"} />
           </a>
-          {/* Same button as the hero's: one trial-lesson button across the page. */}
-          <Ext className="button nav-button" href={contactHref(s)}>
-            {s.hero.primaryCta}
-            <span>
-              <ArrowUpRight />
-            </span>
-          </Ext>
         </nav>
         <EdgeBlur position="top" height={36} className="edge-blur-under" />
       </header>
