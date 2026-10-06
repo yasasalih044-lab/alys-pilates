@@ -45,6 +45,13 @@ export async function generateSite(
   await Promise.all(rooms.map((r, i) => saveUpload(slug, `room-${i}.jpg`, r)));
   await Promise.all(files.trainers.map(async (t, i) => (t ? saveUpload(slug, `trainer-src-${i}.jpg`, await asReference(t)) : undefined)));
 
+  // Owner photos also go on the page: centre 4:5 crop (drops phone-story bars), phone-sized.
+  const gallery = await Promise.all(
+    files.rooms.slice(0, 3).map(async (r, i) =>
+      saveUpload(slug, `gallery-${i}-${v}.webp`, await sharp(r).rotate().resize(600, 750, { fit: "cover", position: "centre" }).webp({ quality: 76 }).toBuffer()),
+    ),
+  );
+
   const palette = await paletteFromLogo(logo, rooms);
   const mode = palette.theme.mode ?? "dark";
   const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
@@ -92,7 +99,7 @@ export async function generateSite(
     ),
   ]);
 
-  const site = buildSite(input, copy, { theme: palette.theme, logo: logos.logo, logoOnLight: logos.onLight, hero, trainerPhotos });
+  const site = buildSite(input, copy, { theme: palette.theme, logo: logos.logo, logoOnLight: logos.onLight, hero, trainerPhotos, gallery });
   const stored: StoredSite = {
     ...site,
     _meta: {

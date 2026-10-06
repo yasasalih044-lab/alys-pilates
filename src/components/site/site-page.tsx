@@ -250,6 +250,23 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
     </section>
   ),
 
+  gallery: (s) =>
+    s.gallery?.images.length ? (
+      <section className="section gallery" id="studyo">
+        <div className="wrap">
+          <Heading label={s.gallery.label} lines={s.gallery.titleLines} />
+        </div>
+        <div className="gallery-strip">
+          {s.gallery.images.map((src, i) => (
+            <figure key={src} className="gallery-item">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt={`${s.brand.name} salonundan ${i + 1}. fotoğraf`} width={600} height={750} loading="lazy" />
+            </figure>
+          ))}
+        </div>
+      </section>
+    ) : null,
+
   trainers: (s) =>
     s.trainers?.items.length ? (
       <section className="section trainers" id="egitmenler">

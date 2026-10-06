@@ -96,6 +96,8 @@ export type Site = {
     unit?: string;
     plans?: { name: string; note: string; prices: (number | null)[]; popular: boolean }[];
   };
+  /** The studio's own photos ("Stüdyomuz"). */
+  gallery?: { label: string; titleLines: Lines; images: string[] };
   trainers?: {
     label: string;
     titleLines: Lines;
@@ -123,6 +125,7 @@ export type SectionKey =
   | "about"
   | "process"
   | "perspective"
+  | "gallery"
   | "testimonials"
   | "trainers"
   | "pricing"

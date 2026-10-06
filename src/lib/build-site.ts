@@ -2,6 +2,7 @@ import "server-only";
 import seed from "@/data/site.json";
 import type { PricedService, SectionKey, Site } from "@/lib/site";
 import type { SiteCopy } from "@/lib/ai";
+import { heroLines } from "@/lib/hero-lines";
 
 export type BuilderInput = {
   studio: string;
@@ -23,6 +24,8 @@ export type BuilderAssets = {
   logoOnLight: string;
   hero?: string;
   trainerPhotos: (string | undefined)[];
+  /** Owner's studio photos, cropped for the "Stüdyomuz" strip. */
+  gallery?: string[];
 };
 
 /** "betül yılmazer" → "Betül Yılmazer" (Turkish casing). Brand names are left as typed. */
@@ -65,6 +68,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
   const hasTrainers = input.trainers.length > 0;
 
   const sections: SectionKey[] = ["hero", "process"];
+  if (assets.gallery?.length) sections.push("gallery");
   if (reviews.length) sections.push("testimonials");
   if (hasTrainers) sections.push("trainers");
   sections.push("pricing");
@@ -100,7 +104,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
     hero: {
       ...base.hero,
       label: `Reformer Pilates · ${district}`,
-      titleLines: copy.heroTitleLines,
+      titleLines: heroLines(input.studio, district),
       description: "",
       secondaryCta: "Paketleri gör",
     },
@@ -109,6 +113,9 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
       sample: realReviews.length === 0,
       items: reviews,
     },
+    gallery: assets.gallery?.length
+      ? { label: "Stüdyomuz", titleLines: ["Seni bekleyen", "salonumuz."], images: assets.gallery }
+      : undefined,
     trainers: hasTrainers
       ? {
           label: "Eğitmenlerimiz",

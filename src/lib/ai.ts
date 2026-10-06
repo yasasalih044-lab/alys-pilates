@@ -46,21 +46,17 @@ export type CopyInput = {
 
 export type SiteCopy = {
   tagline: string;
-  heroTitleLines: string[];
   trainerBios: { title: string; bio: string }[];
   reviews: { name: string; meta: string; body: string }[];
   marquee: string[];
 };
 
-const lines2 = { type: "array", items: { type: "string" }, minItems: 2, maxItems: 2 };
-
 const COPY_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["tagline", "heroTitleLines", "trainerBios", "reviews", "marquee"],
+  required: ["tagline", "trainerBios", "reviews", "marquee"],
   properties: {
     tagline: { type: "string" },
-    heroTitleLines: lines2,
     trainerBios: {
       type: "array",
       items: {
@@ -88,7 +84,6 @@ Ton: sakin, zarif, editoryal; kısa cümleler. Emoji, ünlem, markdown (*, _, #)
 
 KESİN KURAL — uydurma yok: yıl, sertifika, ödül, üye sayısı, yüzde, sağlık/kilo vaadi gibi VERİLMEMİŞ bilgileri yazma.
 
-heroTitleLines: iki satır birlikte TEK cümle, ikinci satır küçük harfle devam eder, sonu nokta, her satır 2–3 kelime ve EN FAZLA 16 karakter (boşluk dahil), stüdyo adı yok. Bu onaylı örneklerin kalitesinde ama aynısını kopyalamadan: ["Güçlen, esne,", "dengede kal."], ["Esne, güçlen,", "kendine dön."].
 tagline: stüdyonun ilçesini ve verilen hizmetleri anan tek cümle.
 trainerBios: verilen HER eğitmen için aynı sırayla. title = 2–4 kelimelik unvan (ör. "Reformer Pilates Eğitmeni"), notlarda daha net bir unvan varsa onu kullan. bio = notlardaki bilgileri 2–3 cümlelik, üçüncü tekil şahıs, sıcak ve profesyonel bir metne çevir; notlarda OLMAYAN hiçbir bilgiyi ekleme. Not boşsa bio tek cümle ve genel olsun (ör. derslerde hareketleri seviyeye göre ayarlar).
 reviews: istenirse 6 adet örnek öğrenci yorumu (name: "Elif K." gibi ad + soyadın baş harfi; meta: verilen hizmetlerden biri; body: 1–2 cümle, somut ama abartısız, sayı/süre/sağlık vaadi yok). İstenmezse boş dizi.
@@ -315,21 +310,12 @@ export async function colourLogoOnTransparent(logo: Buffer): Promise<Buffer> {
 /* No-AI fallbacks: the site still builds when OpenAI is unavailable.  */
 /* ------------------------------------------------------------------ */
 
-const HERO_LINES = [
-  ["Güçlen, esne,", "dengede kal."],
-  ["Esne, güçlen,", "kendine dön."],
-  ["Nefes al,", "kendine alan aç."],
-  ["Her hareket", "seni güçlendirir."],
-];
-
 /** Approved, claim-free copy used when the copy call fails. */
 export function fallbackCopy(input: CopyInput): SiteCopy {
-  const pick = [...input.studio].reduce((n, c) => n + c.charCodeAt(0), 0) % HERO_LINES.length;
   const svc = input.services[0] ?? "Reformer";
   const sentence = (t: string) => (t ? t.charAt(0).toLocaleUpperCase("tr") + t.slice(1).replace(/[.\s]*$/, ".") : "");
   return {
     tagline: `${input.district}'de ${input.services.join(", ").toLocaleLowerCase("tr")}.`,
-    heroTitleLines: HERO_LINES[pick],
     trainerBios: input.trainers.map((t) => ({
       title: "Pilates Eğitmeni",
       bio: t.info ? sentence(t.info) : "Derslerde hareketleri seviyene göre ayarlar ve her adımda eşlik eder.",

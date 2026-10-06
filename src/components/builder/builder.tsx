@@ -176,7 +176,7 @@ export function Builder() {
           {step === "photos" && (
             <Question
               title="Salonundan fotoğraflar"
-              sub="Telefonla çekmen yeterli. Sitendeki fotoğraflar senin salonunda çekilmiş gibi hazırlanır. Ne kadar net olursa o kadar iyi."
+              sub="Galerindeki gerçek fotoğrafları yükle — ekran görüntüsü değil. Bu fotoğraflar sitende “Stüdyomuz” bölümünde görünür, kapak görselin de senin salonunda hazırlanır."
             >
               <div className="sy-row sy-row-3">
                 {["Salonun genel hali", "Reformerlar", "Başka bir açı"].map((label, i) => (
