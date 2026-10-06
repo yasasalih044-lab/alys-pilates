@@ -475,6 +475,7 @@ function themeCss(s: Site): string {
   const t = s.theme;
   const light = t.mode === "light";
   const cta = t.accent || (light ? t.ink : "#fafafa");
+  const dark = light && luminance(t.ink) < 0.05 ? t.ink : "#111111";
   const vars: Record<string, string> = {
     "--bg": t.bg,
     "--surface": t.surface,
@@ -483,7 +484,8 @@ function themeCss(s: Site): string {
     "--line": t.line,
     "--accent": cta,
     "--cta": cta,
-    "--cta-ink": luminance(cta) > 0.45 ? "#111111" : "#ffffff",
+    // Whichever reads better on the button: white, or the page's dark ink (pastel buttons).
+    "--cta-ink": 1.05 / (luminance(cta) + 0.05) >= (luminance(cta) + 0.05) / (luminance(dark) + 0.05) ? "#ffffff" : dark,
     "--scheme": light ? "light" : "dark",
     // Colour photos fade into the page itself; B&W ones into near-black (the ALYS look).
     "--photo-ground": light || t.photos === "color" ? t.bg : "#030303",
