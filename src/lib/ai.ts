@@ -1,6 +1,12 @@
 import "server-only";
 import sharp from "sharp";
 
+/**
+ * gpt-image-2 quality. "medium" ≈ 4× cheaper than "high" (~$0.04 vs ~$0.17 per
+ * portrait); the difference is invisible at the size the site shows photos.
+ */
+const IMAGE_QUALITY = process.env.IMAGE_QUALITY || "medium";
+
 const KEY = () => {
   const k = process.env.OPENAI_API_KEY;
   if (!k) throw new Error("OPENAI_API_KEY is not set");
@@ -128,8 +134,9 @@ export async function whiteLogo(file: Buffer, mime: string): Promise<Buffer> {
   form.append("model", "gpt-image-2");
   form.append("image[]", new Blob([new Uint8Array(input)], { type }), `logo.${type.split("/")[1]}`);
   form.append("prompt", WHITE);
-  form.append("size", "1024x1024");
-  form.append("quality", "high");
+  // Landscape is cheaper than square for gpt-image-2 and fits most wordmarks.
+  form.append("size", "1536x1024");
+  form.append("quality", IMAGE_QUALITY);
   form.append("output_format", "png");
   const res = await fetch("https://api.openai.com/v1/images/edits", {
     method: "POST",
@@ -182,9 +189,9 @@ async function imageCall(prompt: string, size: string, refs: Buffer[] = []): Pro
       refs.forEach((r, i) => form.append("image[]", new Blob([new Uint8Array(r)], { type: "image/jpeg" }), `ref-${i}.jpg`));
       form.append("prompt", prompt);
       form.append("size", size);
-      form.append("quality", "high");
+      form.append("quality", IMAGE_QUALITY);
       form.append("output_format", "webp");
-      form.append("output_compression", "86");
+      form.append("output_compression", "80");
       res = await fetch("https://api.openai.com/v1/images/edits", {
         method: "POST",
         headers: { Authorization: `Bearer ${KEY()}` },
@@ -195,7 +202,7 @@ async function imageCall(prompt: string, size: string, refs: Buffer[] = []): Pro
       res = await fetch("https://api.openai.com/v1/images/generations", {
         method: "POST",
         headers: { Authorization: `Bearer ${KEY()}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "gpt-image-2", prompt, size, quality: "high", output_format: "webp", output_compression: 86 }),
+        body: JSON.stringify({ model: "gpt-image-2", prompt, size, quality: IMAGE_QUALITY, output_format: "webp", output_compression: 80 }),
         signal: AbortSignal.timeout(240_000),
       });
     }
@@ -254,7 +261,9 @@ export async function roomAsHero(room: Buffer) {
 export async function trainerPortrait(photo: Buffer): Promise<Buffer> {
   const prompt =
     "Cut the person out of the attached photo and place them on a seamless pure white studio background. Remove every text, caption, arrow, logo, sticker and graphic element. Keep the person exactly as they are: same face, hair, skin tone, clothing and pose — do not beautify, slim, age or change their identity. Soft even studio light with a gentle natural shadow. Vertical 4:5 portrait, head to waist, centred.";
-  return imageCall(prompt, "1024x1280", [await asReference(photo)]);
+  const img = await imageCall(prompt, "1024x1280", [await asReference(photo)]);
+  // Shown ~400px wide: 800px covers retina and keeps the page light.
+  return sharp(img).resize({ width: 800 }).webp({ quality: 80 }).toBuffer();
 }
 
 /* ------------------------------------------------------------------ */
