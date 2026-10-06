@@ -85,7 +85,7 @@ export async function generateSite(
         if (!t) return undefined;
         const img = await trainerPortrait(t).catch(async (e) => {
           console.error(`trainer ${i} portrait failed, using the photo`, (e as Error).message);
-          return sharp(t).rotate().resize(800, 1000, { fit: "cover", position: "attention" }).webp({ quality: 84 }).toBuffer();
+          return sharp(t).rotate().resize(600, 750, { fit: "cover", position: "attention" }).webp({ quality: 76 }).toBuffer();
         });
         return saveUpload(slug, `trainer-${i}-${v}.webp`, img);
       }),

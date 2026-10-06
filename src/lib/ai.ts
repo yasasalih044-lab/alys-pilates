@@ -7,6 +7,22 @@ import sharp from "sharp";
  */
 const IMAGE_QUALITY = process.env.IMAGE_QUALITY || "medium";
 
+/**
+ * Smallest sizes gpt-image-2 accepts (below ~0.7 MP it answers "below the
+ * minimum pixel budget"); visitors are on phones, so we generate small and
+ * then shrink the delivered file further. Second entry = fallback size.
+ */
+const SIZES = {
+  hero: ["704x1056", "1024x1536"],
+  trainer: ["768x960", "1024x1280"],
+  logo: ["1024x672", "1536x1024"],
+} as const;
+
+/** Phone-sized delivery: width in px and WebP quality. */
+async function forPhones(img: Buffer, width: number) {
+  return sharp(img).resize({ width, withoutEnlargement: true }).webp({ quality: 76 }).toBuffer();
+}
+
 const KEY = () => {
   const k = process.env.OPENAI_API_KEY;
   if (!k) throw new Error("OPENAI_API_KEY is not set");
@@ -135,7 +151,7 @@ export async function whiteLogo(file: Buffer, mime: string): Promise<Buffer> {
   form.append("image[]", new Blob([new Uint8Array(input)], { type }), `logo.${type.split("/")[1]}`);
   form.append("prompt", WHITE);
   // Landscape is cheaper than square for gpt-image-2 and fits most wordmarks.
-  form.append("size", "1536x1024");
+  form.append("size", SIZES.logo[0]);
   form.append("quality", IMAGE_QUALITY);
   form.append("output_format", "png");
   const res = await fetch("https://api.openai.com/v1/images/edits", {
@@ -180,8 +196,10 @@ export class ImageError extends Error {
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** gpt-image-2 call. refs → images/edits (reference photos), none → images/generations. */
-async function imageCall(prompt: string, size: string, refs: Buffer[] = []): Promise<Buffer> {
+async function imageCall(prompt: string, sizes: readonly string[], refs: Buffer[] = []): Promise<Buffer> {
+  let sizeIndex = 0;
   for (let attempt = 0; ; attempt++) {
+    const size = sizes[sizeIndex];
     let res: Response;
     if (refs.length) {
       const form = new FormData();
@@ -215,13 +233,18 @@ async function imageCall(prompt: string, size: string, refs: Buffer[] = []): Pro
       await wait(Math.ceil(secs + 1) * 1000);
       continue;
     }
+    // Size below the pixel budget (OpenAI may raise it): retry once at the larger size.
+    if (/pixel budget|Invalid size/i.test(msg) && sizeIndex < sizes.length - 1) {
+      sizeIndex++;
+      continue;
+    }
     throw new ImageError(msg, /safety/i.test(msg));
   }
 }
 
 /** Owner photos → small JPEG references (phone shots, story screenshots, HEIC-free). */
 export async function asReference(img: Buffer) {
-  return sharp(img).rotate().resize({ width: 1280, height: 1280, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 86 }).toBuffer();
+  return sharp(img).rotate().resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 84 }).toBuffer();
 }
 
 /* ------------------------------------------------------------------ */
@@ -241,17 +264,17 @@ export async function heroImage(opts: { mode: "light" | "dark"; outfit: string; 
   // 1) their studio as the set; 2) same look without references; the caller falls back to their own photo.
   if (opts.rooms.length) {
     try {
-      return await imageCall(`${look} ${room} ${subject} ${rules}`, "1024x1536", opts.rooms.slice(0, 2));
+      return await forPhones(await imageCall(`${look} ${room} ${subject} ${rules}`, SIZES.hero, opts.rooms.slice(0, 2)), 640);
     } catch (e) {
       console.error("hero with studio references failed", (e as Error).message);
     }
   }
-  return imageCall(`${look} A boutique reformer pilates studio with wooden reformer machines. ${subject} ${rules}`, "1024x1536");
+  return forPhones(await imageCall(`${look} A boutique reformer pilates studio with wooden reformer machines. ${subject} ${rules}`, SIZES.hero), 640);
 }
 
 /** Their own studio photo as the hero when generation is refused: never another studio's image. */
 export async function roomAsHero(room: Buffer) {
-  return sharp(room).rotate().resize(1024, 1536, { fit: "cover", position: "attention" }).webp({ quality: 84 }).toBuffer();
+  return sharp(room).rotate().resize(640, 960, { fit: "cover", position: "attention" }).webp({ quality: 76 }).toBuffer();
 }
 
 /* ------------------------------------------------------------------ */
@@ -261,9 +284,8 @@ export async function roomAsHero(room: Buffer) {
 export async function trainerPortrait(photo: Buffer): Promise<Buffer> {
   const prompt =
     "Cut the person out of the attached photo and place them on a seamless pure white studio background. Remove every text, caption, arrow, logo, sticker and graphic element. Keep the person exactly as they are: same face, hair, skin tone, clothing and pose — do not beautify, slim, age or change their identity. Soft even studio light with a gentle natural shadow. Vertical 4:5 portrait, head to waist, centred.";
-  const img = await imageCall(prompt, "1024x1280", [await asReference(photo)]);
-  // Shown ~400px wide: 800px covers retina and keeps the page light.
-  return sharp(img).resize({ width: 800 }).webp({ quality: 80 }).toBuffer();
+  // Card is ~400px wide on phones: 600px keeps it sharp and small.
+  return forPhones(await imageCall(prompt, SIZES.trainer, [await asReference(photo)]), 600);
 }
 
 /* ------------------------------------------------------------------ */
