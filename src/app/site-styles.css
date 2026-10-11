@@ -73,7 +73,10 @@
 }
 .site-root[data-style="modern"] :is(h1, h2, h3) { font-weight: 800; letter-spacing: -0.045em; line-height: 1; }
 .site-root[data-style="modern"] h2 { font-size: clamp(38px, 5vw, 68px); }
-.site-root[data-style="modern"] .hero h1 { font-size: clamp(52px, 6.4vw, 94px); letter-spacing: -0.05em; }
+/* Sized to the copy column (container units): the widest approved title line is
+   ~8.1em in this heavy face, so every title stays on its two lines. */
+.site-root[data-style="modern"] .hero-copy { container-type: inline-size; }
+.site-root[data-style="modern"] .hero h1 { font-size: min(94px, 100cqi / 8.4); letter-spacing: -0.05em; }
 .site-root[data-style="modern"] .section-label { background: var(--cta); color: var(--cta-ink); padding: 7px 13px; border-radius: 99px; letter-spacing: 0.14em; }
 .site-root[data-style="modern"] .section-label::before { display: none; }
 .site-root[data-style="modern"] .button { background: var(--cta); color: var(--cta-ink); border: 2px solid var(--hard); border-radius: 16px; font-size: 13px; gap: 16px; box-shadow: 4px 4px 0 var(--hard); }
@@ -97,7 +100,6 @@
 .site-root[data-style="modern"] .marquee-group { font: 800 clamp(40px, 6vw, 86px)/1.15 var(--display); letter-spacing: -0.045em; }
 .site-root[data-style="modern"] .marquee-star { color: var(--cta); }
 @media (max-width: 640px) {
-  .site-root[data-style="modern"] .hero h1 { font-size: clamp(46px, 13.5vw, 72px); }
   .site-root[data-style="modern"] .marquee-group { font-size: 44px; }
 }
 
