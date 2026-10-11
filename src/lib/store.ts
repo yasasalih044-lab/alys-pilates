@@ -39,6 +39,16 @@ export async function getSite(slug: string): Promise<StoredSite | null> {
   }
 }
 
+/** A generated site from disk only (never the built-in seeds), for endpoints that write back. */
+export async function getStoredSite(slug: string): Promise<StoredSite | null> {
+  if (!SLUG.test(slug) || slug in SEEDS) return null;
+  try {
+    return JSON.parse(await fs.readFile(path.join(DATA_DIR, "sites", `${slug}.json`), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export async function saveSite(slug: string, site: StoredSite) {
   if (!SLUG.test(slug)) throw new Error("bad slug");
   const dir = path.join(DATA_DIR, "sites");

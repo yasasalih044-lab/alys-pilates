@@ -53,7 +53,44 @@ export function Builder() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  // Done step: the style the studio picks for its own new site (saved via /api/style).
+  const [saved, setSaved] = useState<SiteStyle | null>(null);
+  const [saving, setSaving] = useState<SiteStyle | null>(null);
+  const [styleMsg, setStyleMsg] = useState("");
   const honeypot = useRef<HTMLInputElement>(null);
+
+  // Dev-only test hook: /?test-done=<slug> opens the done step for an existing
+  // local preview, so the style picker can be tested without calling /api/generate.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const slug = new URLSearchParams(window.location.search).get("test-done");
+    if (!slug || !/^[a-z0-9-]{2,64}$/.test(slug)) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-off dev hook, runs once after mount
+    setResult({ slug, url: `/s/${slug}` });
+    setStudio("Test");
+    setStep("done");
+  }, []);
+
+  async function pickStyle(key: SiteStyle) {
+    if (!result || saving) return;
+    setSaving(key);
+    setStyleMsg("");
+    try {
+      const res = await fetch("/api/style", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: result.slug, style: key }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Kaydedilemedi, lütfen tekrar dene.");
+      setSaved(key);
+      setStyleMsg(`Kaydedildi. Siten artık ${SITE_STYLES.find((o) => o.key === key)?.name} tarzında.`);
+    } catch (e) {
+      setStyleMsg((e as Error).message);
+    } finally {
+      setSaving(null);
+    }
+  }
 
   const index = STEPS.indexOf(step);
   const lastForm = STEPS.indexOf("color");
@@ -391,29 +428,26 @@ export function Builder() {
           )}
 
           {step === "style" && (
-            <Question title="Siten nasıl görünsün?" sub="Renkler yine logondan gelir; burada yazı ve düzen tarzını seçiyorsun. Sonra istersen değiştiririz.">
+            <Question title="Siten nasıl görünsün?" sub="Renkler yine logondan gelir; burada sayfanın düzenini seçiyorsun. Önizle ile örneğini aç.">
               <div className={`sy-styles ${styleFontVars}`} role="radiogroup" aria-label="Site tarzı">
                 {SITE_STYLES.map((o) => (
-                  <button
-                    key={o.key}
-                    type="button"
-                    role="radio"
-                    aria-checked={style === o.key}
-                    className={`sy-style${style === o.key ? " sel" : ""}`}
-                    data-style={o.key}
-                    onClick={() => setStyle(o.key)}
-                  >
-                    <span className="sy-style-mock" aria-hidden>
-                      <span className="sy-mock-label">Reformer · Pilates</span>
-                      <span className="sy-mock-title">İlk adımı bugün at.</span>
-                      <span className="sy-mock-row">
-                        <span className="sy-mock-btn" />
-                        <span className="sy-mock-photo" />
-                      </span>
-                    </span>
-                    <span className="sy-style-name">{o.name}</span>
-                    <small>{o.note}</small>
-                  </button>
+                  <div key={o.key} className="sy-style-cell">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={style === o.key}
+                      className={`sy-style${style === o.key ? " sel" : ""}`}
+                      data-style={o.key}
+                      onClick={() => setStyle(o.key)}
+                    >
+                      <StyleMock k={o.key} />
+                      <span className="sy-style-name">{o.name}</span>
+                      <small>{o.note}</small>
+                    </button>
+                    <a className="sy-style-preview" href={`/ornek/${o.key}`} target="_blank" rel="noopener noreferrer" aria-label={`${o.name} tarzını önizle (yeni sekmede)`}>
+                      Önizle ↗
+                    </a>
+                  </div>
                 ))}
               </div>
             </Question>
@@ -460,6 +494,35 @@ export function Builder() {
                 <span className="sy-hl">{studio}</span> sitesi hazır.
               </h1>
               <p className="sy-sub">Siteni aç, gez. Beğenirsen tek mesajla yayına alalım. İlk 1 ay ücretsiz.</p>
+              <section className="sy-pick" aria-labelledby="sy-pick-title">
+                <h2 id="sy-pick-title" className="sy-pick-title">Tarzını seç</h2>
+                <p className="sy-pick-sub">Aynı siteyi dört tarzda aç, beğendiğini seç. İçerik ve renkler aynı kalır.</p>
+                <div className={`sy-pick-grid ${styleFontVars}`}>
+                  {SITE_STYLES.map((o) => {
+                    const current = (saved ?? style) === o.key;
+                    return (
+                      <div key={o.key} className={`sy-pick-card${current ? " sel" : ""}`} data-style={o.key}>
+                        <StyleMock k={o.key} />
+                        <div className="sy-pick-head">
+                          <span className="sy-style-name">{o.name}</span>
+                          {current ? <span className="sy-pick-on">Seçili</span> : null}
+                        </div>
+                        <div className="sy-pick-actions">
+                          <a className="sy-pick-open" href={`${result.url}?stil=${o.key}`} target="_blank" rel="noopener noreferrer" aria-label={`Siteni ${o.name} tarzında aç (yeni sekmede)`}>
+                            Aç ↗
+                          </a>
+                          <button type="button" className="sy-pick-btn" disabled={!!saving || current} onClick={() => pickStyle(o.key)}>
+                            {saving === o.key ? "Kaydediliyor…" : current ? "Seçili" : "Bunu seç"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="sy-pick-msg" role="status" aria-live="polite">
+                  {styleMsg}
+                </p>
+              </section>
               <div className="sy-actions">
                 <a className="sy-btn" href={result.url} target="_blank" rel="noopener noreferrer">
                   Siteni aç <Arrow />
@@ -491,6 +554,47 @@ export function Builder() {
         </div>
       </main>
     </div>
+  );
+}
+
+/** Tiny honest sketch of each style's page composition (form tiles and the done-step picker). */
+function StyleMock({ k }: { k: SiteStyle }) {
+  return (
+    <span className="sy-style-mock" data-mock={k} aria-hidden>
+      {k === "editoryal" ? (
+        <>
+          <span className="sy-mock-label">Reformer · Pilates</span>
+          <span className="sy-mock-title">İlk adımı bugün at.</span>
+          <span className="sy-mock-row">
+            <span className="sy-mock-btn" />
+            <span className="sy-mock-photo" />
+          </span>
+        </>
+      ) : k === "luks" ? (
+        <>
+          <span className="sy-mock-arch" />
+          <span className="sy-mock-title">İlk adımı bugün at.</span>
+          <span className="sy-mock-btn" />
+        </>
+      ) : k === "modern" ? (
+        <>
+          <span className="sy-mock-title">İlk adımı bugün at.</span>
+          <span className="sy-mock-bento">
+            <i />
+            <i />
+            <i />
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="sy-mock-cover" />
+          <span className="sy-mock-sheet">
+            <span className="sy-mock-title">İlk adımı bugün at.</span>
+            <span className="sy-mock-btn" />
+          </span>
+        </>
+      )}
+    </span>
   );
 }
 

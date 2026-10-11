@@ -1,13 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowUpRight, CalendarDays, MapPin } from "lucide-react";
-import {
-  pricingServices,
-  contactHref,
-  isExternal,
-  mapsHref,
-  type SectionKey,
-  type Site,
-} from "@/lib/site";
+import { ArrowUpRight, CalendarDays } from "lucide-react";
+import { pricingServices, contactHref, mapsHref, type SectionKey, type Site } from "@/lib/site";
+import { Ext, HeroActions, HeroTitle, Lines, Marquee, Star, initialsOf, pad2 } from "@/components/site/parts";
+import { LAYOUTS } from "@/components/site/layouts";
 import { SiteBehavior } from "@/components/site-behavior";
 import { ScrollSteps } from "@/components/ui/scroll-steps";
 import { TestimonialMarquee } from "@/components/ui/testimonial-marquee";
@@ -18,32 +13,9 @@ import { DEFAULT_STYLE } from "@/lib/styles";
 import { styleFontVars } from "@/app/style-fonts";
 import "@/app/site.css";
 import "@/app/site-styles.css";
-
-function Star() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 0c.6 6.4 5.6 11.4 12 12-6.4.6-11.4 5.6-12 12-.6-6.4-5.6-11.4-12-12C6.4 11.4 11.4 6.4 12 0Z" />
-    </svg>
-  );
-}
-
-function Ext({ href, className, children }: { href: string; className?: string; children: ReactNode }) {
-  const ext = isExternal(href);
-  return (
-    <a href={href} className={className} target={ext ? "_blank" : undefined} rel={ext ? "noopener noreferrer" : undefined}>
-      {children}
-    </a>
-  );
-}
-
-function Lines({ lines }: { lines: string[] }) {
-  return lines.map((l, i) => (
-    <span key={i}>
-      {i > 0 ? <br /> : null}
-      {l}
-    </span>
-  ));
-}
+import "@/app/style-luks.css";
+import "@/app/style-modern.css";
+import "@/app/style-sade.css";
 
 function Heading({ label, lines, intro }: { label: string; lines: string[]; intro?: string }) {
   return (
@@ -59,16 +31,6 @@ function Heading({ label, lines, intro }: { label: string; lines: string[]; intr
   );
 }
 
-const initialsOf = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toLocaleUpperCase("tr"))
-    .join("");
-
-const pad2 = (i: number) => String(i + 1).padStart(2, "0");
-
 const sections: Record<SectionKey, (s: Site) => ReactNode> = {
   hero: (s) => (
     <section className="hero-section photo-section">
@@ -78,27 +40,8 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
             <span className="status-dot" aria-hidden />
             {s.hero.label}
           </p>
-          <h1 className="shimmer" aria-label={s.hero.titleLines.join(" ")}>
-            {s.hero.titleLines.map((l, i) => (
-              <span key={i} className="shimmer-line" aria-hidden style={{ "--shimmer-delay": `${1.2 + i * 0.35}s` } as CSSProperties}>
-                {l}
-              </span>
-            ))}
-          </h1>
-          <div className="hero-actions">
-            <Ext href={contactHref(s)} className="button">
-              {s.hero.primaryCta}
-              <span>
-                <ArrowUpRight />
-              </span>
-            </Ext>
-            <Ext href={mapsHref(s)} className="button button-ghost">
-              {s.hero.locationCta}
-              <span>
-                <MapPin />
-              </span>
-            </Ext>
-          </div>
+          <HeroTitle s={s} />
+          <HeroActions s={s} />
         </div>
         <figure className="hero-portrait">
           <div className="portrait-orbit" aria-hidden />
@@ -399,34 +342,10 @@ const sections: Record<SectionKey, (s: Site) => ReactNode> = {
   },
 };
 
-function Marquee({ s }: { s: Site }) {
-  const group = (hidden: boolean) => (
-    <div className="marquee-group" aria-hidden={hidden || undefined}>
-      {s.marquee.map((w) => (
-        <span key={w} style={{ display: "contents" }}>
-          <span>{w}</span>
-          <span className="marquee-star" aria-hidden>
-            <Star />
-          </span>
-        </span>
-      ))}
-    </div>
-  );
-  return (
-    <section className="brand-marquee" aria-label={s.marquee.join(", ")}>
-      <div className="marquee-window">
-        <div className="marquee-track">
-          {group(false)}
-          {group(true)}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /** Renders one studio site from its JSON. Theme colours are scoped to this wrapper. */
-export default function SitePage({ s, children }: { s: Site; children?: ReactNode }) {
+export default function SitePage({ s, top, children }: { s: Site; top?: ReactNode; children?: ReactNode }) {
   const light = s.theme.mode === "light";
+  const layout = LAYOUTS[s.style ?? DEFAULT_STYLE];
   return (
     <div className={`site-root${light ? " site-light" : ""} ${styleFontVars}`} data-style={s.style ?? DEFAULT_STYLE}>
       <style>{`:root{${themeCss(s)}}`}</style>
@@ -435,6 +354,7 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
       <a className="skip" href="#main">
         İçeriğe geç
       </a>
+      {top}
       <header className="masthead">
         <nav className="nav wrap" aria-label="Ana menü">
           <a className="brand" href="#main" aria-label={`${s.brand.name} · Ana sayfa`}>
@@ -448,13 +368,12 @@ export default function SitePage({ s, children }: { s: Site; children?: ReactNod
       <main id="main">
         {s.sections.map((key) => (
           <div key={key} style={{ display: "contents" }}>
-            {sections[key]?.(s)}
+            {(layout?.sections[key] ?? sections[key])?.(s)}
           </div>
         ))}
       </main>
 
-      <Marquee s={s} />
-
+      {layout ? layout.closing(s) : <Marquee s={s} />}
 
       <EdgeBlur position="bottom" height={64} />
       <SiteBehavior />

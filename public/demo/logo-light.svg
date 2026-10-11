@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="80" viewBox="0 0 360 80" role="img" aria-label="örnek pilates">
+  <circle cx="40" cy="40" r="30" fill="none" stroke="#f6f1ee" stroke-width="3"/>
+  <text x="40" y="51" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#f6f1ee">ö</text>
+  <text x="86" y="52" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="36" font-weight="700" letter-spacing="-1" fill="#f6f1ee">örnek pilates</text>
+</svg>

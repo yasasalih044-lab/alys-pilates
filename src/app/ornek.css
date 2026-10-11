@@ -1,0 +1,24 @@
+/* Example-site ribbon (/ornek/<stil>): Reformer Dijital colours, not the
+   studio's, like the preview bar. Static (not sticky), above the header. */
+.ornek-ribbon {
+  position: relative; z-index: 11; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 18px;
+  padding: 8px max(16px, calc((100% - 1200px) / 2)); background: #0a0608; border-bottom: 1px solid rgba(255, 0, 255, 0.35);
+  font-family: var(--font-nunito), system-ui, sans-serif; color: rgba(255, 255, 255, 0.72);
+}
+.ornek-ribbon__text { margin: 0; font-size: 12px; font-weight: 700; line-height: 1.4; color: rgba(255, 255, 255, 0.72); }
+.ornek-ribbon__text strong { color: #ff00ff; font-weight: 900; }
+.ornek-ribbon__row { display: flex; flex-wrap: wrap; gap: 6px 10px; }
+.ornek-ribbon__group { display: flex; gap: 2px; padding: 2px; border-radius: 999px; border: 1px solid rgba(255, 0, 255, 0.3); }
+.ornek-ribbon__group a {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 800; color: rgba(255, 255, 255, 0.8); white-space: nowrap;
+}
+.ornek-ribbon__group a[aria-current] { background: #ff00ff; color: #fff; }
+@media (max-width: 480px) {
+  .ornek-ribbon { padding-block: 6px 8px; }
+  .ornek-ribbon__text { font-size: 11px; }
+  .ornek-ribbon__group a { padding: 0 9px; font-size: 12px; }
+}
+@media (max-width: 360px) {
+  .ornek-ribbon__group a { padding: 0 7px; font-size: 11.5px; }
+}

@@ -1,0 +1,329 @@
+{
+  "style": "editoryal",
+  "brand": {
+    "name": "Örnek Pilates Stüdyosu",
+    "wordmark": "örnek pilates",
+    "monogram": "ÖP.",
+    "logo": "/demo/logo-light.svg",
+    "mark": "/demo/mark.svg",
+    "originalLogo": "/demo/logo-dark.svg",
+    "logoOnLight": "/demo/logo-dark.svg",
+    "icon": "/demo/mark.svg",
+    "role": "Reformer Pilates Stüdyosu",
+    "tagline": "Kadıköy'de reformer pilates dersleri için örnek site."
+  },
+  "theme": {
+    "bg": "#121011",
+    "surface": "#1a1718",
+    "ink": "#f6f1ee",
+    "muted": "#a69d99",
+    "line": "#4a4442",
+    "accent": "#d8a48f",
+    "mode": "dark",
+    "photos": "mono"
+  },
+  "images": {
+    "hero": "/demo/hero.webp",
+    "heroAlt": "Reformer aletinin yanında duran pilates eğitmeni (örnek fotoğraf)",
+    "studio": "/demo/studio.webp",
+    "studioAlt": "Reformer üzerinde hamle hareketi (örnek fotoğraf)",
+    "detail": "/demo/detail.webp",
+    "detailAlt": "Reformer barına yerleştirilmiş eller (örnek fotoğraf)",
+    "texture": "/images/texture.webp"
+  },
+  "location": {
+    "district": "Kadıköy",
+    "city": "İstanbul",
+    "address": "",
+    "mapQuery": "Kadıköy, İstanbul"
+  },
+  "contact": {
+    "whatsapp": "905454498280",
+    "instagram": "",
+    "phone": ""
+  },
+  "nav": [
+    {
+      "label": "Süreç",
+      "href": "#surec"
+    },
+    {
+      "label": "Stüdyo",
+      "href": "#studyo"
+    },
+    {
+      "label": "Yorumlar",
+      "href": "#yorumlar"
+    },
+    {
+      "label": "Paketler",
+      "href": "#paketler"
+    }
+  ],
+  "navCta": "Deneme dersi",
+  "hero": {
+    "label": "Reformer Pilates · Kadıköy",
+    "titleLines": [
+      "Aradığın salonu",
+      "sonunda buldun."
+    ],
+    "description": "",
+    "primaryCta": "Deneme dersi ayırt",
+    "secondaryCta": "",
+    "locationCta": "Yerimiz nerede?"
+  },
+  "strip": {
+    "lead": "Örnek reformer pilates stüdyosu.",
+    "from": "Kadıköy",
+    "to": "İstanbul",
+    "tail": "Grup · Özel"
+  },
+  "services": {
+    "label": "Dersler",
+    "titleLines": [
+      "Dersler",
+      "burada yer alır."
+    ],
+    "intro": "Stüdyonun ders türleri burada listelenir.",
+    "cta": "Bilgi al",
+    "items": [
+      {
+        "name": "Reformer grup",
+        "description": "Grup dersinin kısa tanıtımı burada yer alır.",
+        "image": "/demo/class-group.webp",
+        "alt": "Reformer aletlerinde grup dersi (örnek fotoğraf)"
+      },
+      {
+        "name": "Özel ders",
+        "description": "Özel dersin kısa tanıtımı burada yer alır.",
+        "image": "/demo/class-private.webp",
+        "alt": "Eğitmen eşliğinde birebir ders (örnek fotoğraf)"
+      }
+    ]
+  },
+  "about": {
+    "label": "Örnek Pilates Stüdyosu",
+    "titleLines": [
+      "Stüdyo tanıtımı",
+      "burada yer alır."
+    ],
+    "body": "Stüdyonun kısa tanıtımı burada yer alır.",
+    "note": "Örnek metin.",
+    "tags": [
+      "Reformer"
+    ],
+    "link": "Bilgi al"
+  },
+  "process": {
+    "label": "Süreç",
+    "titleLines": [
+      "İlk mesajdan",
+      "hayalindeki forma."
+    ],
+    "intro": "Beş adımda, seni tanıyarak ve hedefine göre ilerleyen bir süreç.",
+    "items": [
+      {
+        "title": "Bize mesaj gönderin",
+        "body": "WhatsApp'tan yazın; hedefinizi ve uygun olduğunuz saatleri kısaca paylaşın."
+      },
+      {
+        "title": "Demo ders randevusu ayarlayalım",
+        "body": "Size uygun gün ve saati birlikte belirleyelim, ders tipini seçelim."
+      },
+      {
+        "title": "Demo derse gelin",
+        "body": "Rahat bir kıyafet ve kaymaz çorap yeterli. Eğitmeniniz aleti ve hareketleri tanıtır."
+      },
+      {
+        "title": "Beraber çalışmaya başlayalım",
+        "body": "Hedefinize göre programınızı ve ders sıklığınızı birlikte planlayalım."
+      },
+      {
+        "title": "Hayalinizdeki fiziğe ulaşın",
+        "body": "Düzenli derslerle güçlenin ve esneyin; ilerlemenizi eğitmeninizle birlikte takip edin."
+      }
+    ]
+  },
+  "testimonials": {
+    "label": "Öğrencilerimiz",
+    "titleLines": [
+      "Stüdyodan",
+      "ilk elden."
+    ],
+    "intro": "Gerçek sitede öğrencilerinin kendi yorumları yer alır.",
+    "sample": true,
+    "items": [
+      {
+        "name": "Elif",
+        "meta": "Örnek yorum",
+        "body": "Ders akışı sakin ve anlaşılır, her hareketi rahatça takip ettim."
+      },
+      {
+        "name": "Zeynep",
+        "meta": "Örnek yorum",
+        "body": "Eğitmen hareketleri tek tek gösterdi, aleti kısa sürede tanıdım."
+      },
+      {
+        "name": "Merve",
+        "meta": "Örnek yorum",
+        "body": "Stüdyo düzenli ve sessiz, derse odaklanmak kolay oldu."
+      },
+      {
+        "name": "Ayşe",
+        "meta": "Örnek yorum",
+        "body": "Gün ve saat ayarlamak WhatsApp üzerinden kolayca oldu."
+      },
+      {
+        "name": "Deniz",
+        "meta": "Örnek yorum",
+        "body": "Grup küçük olduğu için herkese tek tek yönlendirme yapıldı."
+      },
+      {
+        "name": "Selin",
+        "meta": "Örnek yorum",
+        "body": "İlk derse ne giyeceğimi önceden söylediler, hazırlıklı geldim."
+      }
+    ]
+  },
+  "perspective": {
+    "label": "Yaklaşım",
+    "titleLines": [
+      "Yaklaşım",
+      "burada yer alır."
+    ],
+    "intro": "Örnek metin.",
+    "caption": "Örnek Pilates Stüdyosu",
+    "kicker": "REFORMER PİLATES · KADIKÖY",
+    "headline": "Stüdyonun yaklaşımı",
+    "headlineEm": "burada yer alır.",
+    "items": [
+      {
+        "title": "Örnek başlık",
+        "body": "Örnek açıklama burada yer alır."
+      }
+    ],
+    "link": "Bilgi al"
+  },
+  "pricing": {
+    "label": "Paketler",
+    "titleLines": [
+      "Ritmine uygun",
+      "bir paket."
+    ],
+    "sample": true,
+    "cta": "Bu paketi sor",
+    "services": [
+      {
+        "name": "Reformer grup",
+        "packages": [
+          {
+            "name": "4 seans",
+            "price": 3200,
+            "popular": false
+          },
+          {
+            "name": "8 seans",
+            "price": 5800,
+            "popular": true
+          },
+          {
+            "name": "12 seans",
+            "price": 8100,
+            "popular": false
+          }
+        ]
+      },
+      {
+        "name": "Özel ders",
+        "packages": [
+          {
+            "name": "4 seans",
+            "price": 6400,
+            "popular": false
+          },
+          {
+            "name": "8 seans",
+            "price": 12000,
+            "popular": true
+          }
+        ]
+      }
+    ]
+  },
+  "gallery": {
+    "label": "Stüdyomuz",
+    "titleLines": [
+      "Seni bekleyen",
+      "salonumuz."
+    ],
+    "images": [
+      "/demo/studio.webp",
+      "/demo/class-group.webp",
+      "/demo/class-duet.webp"
+    ]
+  },
+  "trainers": {
+    "label": "Eğitmenlerimiz",
+    "titleLines": [
+      "Seni tanıyan",
+      "eğitmenlerle çalış."
+    ],
+    "items": [
+      {
+        "name": "Örnek Eğitmen",
+        "title": "Reformer Pilates Eğitmeni",
+        "bio": "Eğitmeninin adı, sertifikaları ve kısa tanıtımı burada yer alır.",
+        "photo": "/demo/class-private.webp"
+      },
+      {
+        "name": "İkinci Eğitmen",
+        "title": "Mat Pilates Eğitmeni",
+        "bio": "Fotoğraf eklenmezse baş harfleriyle bir rozet gösterilir."
+      }
+    ]
+  },
+  "faq": {
+    "label": "Sorular",
+    "title": "Sık sorulanlar.",
+    "intro": "Örnek metin.",
+    "items": [
+      {
+        "q": "Örnek soru?",
+        "a": "Örnek cevap burada yer alır."
+      }
+    ]
+  },
+  "booking": {
+    "label": "Deneme dersi",
+    "titleLines": [
+      "Deneme dersi",
+      "burada ayarlanır."
+    ],
+    "body": "Örnek metin.",
+    "cardKicker": "İLK DERS",
+    "cardTitleLines": [
+      "Örnek",
+      "başlık."
+    ],
+    "steps": [
+      "Örnek adım."
+    ],
+    "button": "WhatsApp'tan yaz",
+    "note": "Örnek not."
+  },
+  "marquee": [
+    "Reformer",
+    "Kadıköy",
+    "Pilates",
+    "Denge",
+    "Akış"
+  ],
+  "sections": [
+    "hero",
+    "process",
+    "gallery",
+    "testimonials",
+    "trainers",
+    "pricing"
+  ]
+}
