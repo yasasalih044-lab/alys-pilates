@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_STYLE, SITE_STYLES, type SiteStyle } from "@/lib/styles";
-import { styleFontVars } from "@/app/style-fonts";
 
 const RD_WHATSAPP = "905454498280";
 
@@ -429,7 +428,7 @@ export function Builder() {
 
           {step === "style" && (
             <Question title="Siten nasıl görünsün?" sub="Renkler yine logondan gelir; burada sayfanın düzenini seçiyorsun. Önizle ile örneğini aç.">
-              <div className={`sy-styles ${styleFontVars}`} role="radiogroup" aria-label="Site tarzı">
+              <div className="sy-styles" role="radiogroup" aria-label="Site tarzı">
                 {SITE_STYLES.map((o) => (
                   <div key={o.key} className="sy-style-cell">
                     <button
@@ -497,7 +496,7 @@ export function Builder() {
               <section className="sy-pick" aria-labelledby="sy-pick-title">
                 <h2 id="sy-pick-title" className="sy-pick-title">Tarzını seç</h2>
                 <p className="sy-pick-sub">Aynı siteyi dört tarzda aç, beğendiğini seç. İçerik ve renkler aynı kalır.</p>
-                <div className={`sy-pick-grid ${styleFontVars}`}>
+                <div className="sy-pick-grid">
                   {SITE_STYLES.map((o) => {
                     const current = (saved ?? style) === o.key;
                     return (

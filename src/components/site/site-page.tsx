@@ -10,7 +10,6 @@ import { PricingInteraction } from "@/components/ui/pricing-interaction";
 import { EdgeBlur } from "@/components/ui/edge-blur";
 import { SilkBackground } from "@/components/ui/silk-background";
 import { DEFAULT_STYLE } from "@/lib/styles";
-import { styleFontVars } from "@/app/style-fonts";
 import "@/app/site.css";
 import "@/app/site-styles.css";
 import "@/app/style-luks.css";
@@ -347,7 +346,7 @@ export default function SitePage({ s, top, children }: { s: Site; top?: ReactNod
   const light = s.theme.mode === "light";
   const layout = LAYOUTS[s.style ?? DEFAULT_STYLE];
   return (
-    <div className={`site-root${light ? " site-light" : ""} ${styleFontVars}`} data-style={s.style ?? DEFAULT_STYLE}>
+    <div className={`site-root${light ? " site-light" : ""}`} data-style={s.style ?? DEFAULT_STYLE}>
       <style>{`:root{${themeCss(s)}}`}</style>
       {light ? <SilkBackground bg={s.theme.bg} tint={s.theme.accent || s.theme.ink} /> : null}
       <div className="texture" aria-hidden style={{ "--texture": `url(${s.images.texture})` } as CSSProperties} />

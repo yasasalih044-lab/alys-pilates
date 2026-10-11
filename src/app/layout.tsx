@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import { Cormorant, Manrope, Nunito } from "next/font/google";
+import "./fonts.css";
 
-// Site template fonts (Manrope + italic Cormorant) and the Site Yapıcı font (Nunito).
-const sans = Manrope({ variable: "--font-sans", subsets: ["latin", "latin-ext"], weight: ["400", "700"] });
-const serif = Cormorant({ variable: "--font-serif", subsets: ["latin", "latin-ext"], weight: ["400"], style: ["italic"] });
-const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin", "latin-ext"], weight: ["700", "800", "900"] });
+// Fonts are self-hosted in fonts.css (Manrope + italic Cormorant for the sites,
+// Nunito for Site Yapıcı, plus the style presets' display faces).
 
 export const metadata: Metadata = {
   title: "Site Yapıcı | Reformer Dijital",
@@ -13,7 +11,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="tr" className={`${sans.variable} ${serif.variable} ${nunito.variable}`}>
+    <html lang="tr">
+      <head>
+        {/* The two faces every site uses first: Manrope (latin + Turkish letters). */}
+        <link rel="preload" href="/fonts/manrope-normal-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/manrope-normal-400-latin-ext.woff2" as="font" type="font/woff2" crossOrigin="" />
+      </head>
       <body>{children}</body>
     </html>
   );
