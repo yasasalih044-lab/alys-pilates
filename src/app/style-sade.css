@@ -187,14 +187,28 @@
 
 @media (min-width: 900px) {
   .site-root[data-style="sade"] .section { padding-block: 120px; }
-  .site-root[data-style="sade"] .sd-cover { width: min(1200px, calc(100% - 96px)); height: clamp(420px, calc(100svh - 330px), 640px); margin-inline: auto; border-radius: 32px; }
-  .site-root[data-style="sade"] .hero { margin-top: -160px; padding-bottom: 80px; }
-  .site-root[data-style="sade"] .sd-sheet { padding: 34px 40px 32px; }
+  /* Desktop hero: the portrait stays a portrait (4:5, never upscaled) on the right; the sheet sits
+     in the left column and only overlaps the photo's left edge, so the face is never covered. */
+  .site-root[data-style="sade"] .sd-hero {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    width: min(1200px, calc(100% - 96px)); margin-inline: auto; padding-block: 8px 72px;
+  }
+  .site-root[data-style="sade"] .sd-cover {
+    grid-row: 1; grid-column: 2; width: min(520px, 46vw); height: auto; aspect-ratio: 4 / 5;
+    max-height: calc(100svh - 150px); margin: 0; border-radius: 32px; box-shadow: var(--sd-shadow);
+  }
+  .site-root[data-style="sade"]:has(.ornek-ribbon) .sd-cover { max-height: calc(100svh - 220px); }
+  .site-root[data-style="sade"] .sd-cover img { object-position: 50% 18%; }
+  .site-root[data-style="sade"] .hero { grid-row: 1; grid-column: 1; margin: 0 -80px 0 0; padding: 0; }
+  .site-root[data-style="sade"] .sd-sheet { margin: 0 0 0 auto; padding: 38px 40px 34px; }
   .site-root[data-style="sade"] .hero-actions { flex-direction: row; }
   .site-root[data-style="sade"] .hero-actions .button { flex: 1; }
-  .site-root[data-style="sade"] .sd-stagger { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; max-width: 1100px; align-items: start; }
+  /* Gallery: one large photo set lower on the left, two smaller ones stacked on the right (the last one narrower). */
+  .site-root[data-style="sade"] .sd-stagger { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px 40px; max-width: 1000px; align-items: start; }
   .site-root[data-style="sade"] .sd-stagger .gallery-item { width: 100%; justify-self: stretch; }
-  .site-root[data-style="sade"] .sd-photo:nth-child(2) { margin-top: 56px; }
+  .site-root[data-style="sade"] .sd-stagger[data-count="3"] .sd-photo:nth-child(1) { grid-column: 1; grid-row: 1 / span 2; margin-top: 72px; }
+  .site-root[data-style="sade"] .sd-stagger[data-count="3"] .sd-photo:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .site-root[data-style="sade"] .sd-stagger[data-count="3"] .sd-photo:nth-child(3) { grid-column: 2; grid-row: 2; width: 82%; justify-self: end; }
   .site-root[data-style="sade"] .sd-stagger[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 360px)); justify-content: center; }
   .site-root[data-style="sade"] .sd-stagger[data-count="1"] { grid-template-columns: minmax(0, 420px); justify-content: center; }
   .site-root[data-style="sade"] .sd-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 1100px; height: 600px; }

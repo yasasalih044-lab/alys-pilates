@@ -573,7 +573,11 @@ function StyleMock({ k }: { k: SiteStyle }) {
       ) : k === "luks" ? (
         <>
           <span className="sy-mock-arch" />
-          <span className="sy-mock-title">İlk adımı bugün at.</span>
+          <span className="sy-mock-title">
+            İlk adımı
+            <br />
+            bugün at.
+          </span>
           <span className="sy-mock-btn" />
         </>
       ) : k === "modern" ? (

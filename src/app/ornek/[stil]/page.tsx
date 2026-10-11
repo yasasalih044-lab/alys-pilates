@@ -54,7 +54,7 @@ export default async function Page({ params, searchParams }: Props) {
           </>
         }
         cta="Bu tarzda site istiyorum"
-        message={`Merhaba, internet sitemi istiyorum. ${name} tarzında bir site istiyorum: ${url}`}
+        message={`Merhaba, internet sitemi istiyorum, ${name} tarzında olsun: ${url}`}
       />
     </SitePage>
   );

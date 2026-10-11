@@ -184,7 +184,7 @@ body { margin: 0; }
 .sy-mock-photo { width: 34px; height: 40px; border-radius: 8px; background: linear-gradient(160deg, #d9c7bd, #a88f84); }
 /* Lüks: arch on top, serif line, thin rectangle. */
 .sy-style-mock[data-mock="luks"] { align-items: center; text-align: center; gap: 5px; }
-.sy-style-mock[data-mock="luks"] .sy-mock-title { font-family: var(--font-lux), serif; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; }
+.sy-style-mock[data-mock="luks"] .sy-mock-title { font-family: var(--font-lux), serif; font-weight: 500; font-size: 17px; letter-spacing: -0.01em; white-space: nowrap; }
 .sy-mock-arch { width: 30px; height: 38px; flex: none; border-radius: 99px 99px 0 0; background: linear-gradient(160deg, #d9c7bd, #a88f84); outline: 1px solid #241a1f55; outline-offset: 2px; margin-top: 2px; }
 .sy-style-mock[data-mock="luks"] .sy-mock-btn { width: 60px; height: 11px; border-radius: 1px; margin-top: auto; }
 /* Modern: heavy line + three bento blocks with a hard shadow. */
