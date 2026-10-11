@@ -1,3 +1,5 @@
+import type { SiteStyle } from "@/lib/styles";
+
 export type PricedService = {
   name: string;
   packages: { name: string; price: number | null; popular?: boolean }[];
@@ -8,6 +10,8 @@ type Lines = string[];
 type TitleBody = { title: string; body: string };
 
 export type Site = {
+  /** Look preset ("Tarz"); older sites without it render as "editoryal". */
+  style?: SiteStyle;
   brand: {
     name: string;
     wordmark: string;

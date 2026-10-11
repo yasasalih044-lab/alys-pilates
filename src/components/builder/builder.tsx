@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { DEFAULT_STYLE, SITE_STYLES, type SiteStyle } from "@/lib/styles";
+import { styleFontVars } from "@/app/style-fonts";
 
 const RD_WHATSAPP = "905454498280";
 
@@ -19,7 +21,7 @@ type Service = { name: string; packages: Pkg[] };
 type Trainer = { name: string; info: string; photo: File | null };
 type Review = { name: string; text: string };
 
-const STEPS = ["intro", "studio", "photos", "location", "contact", "services", "trainers", "reviews", "color", "build", "done"] as const;
+const STEPS = ["intro", "studio", "photos", "location", "contact", "services", "trainers", "reviews", "style", "color", "build", "done"] as const;
 type Step = (typeof STEPS)[number];
 
 const BUILD_STAGES = [
@@ -46,6 +48,7 @@ export function Builder() {
   const [hasTrainers, setHasTrainers] = useState<boolean | null>(null);
   const [trainers, setTrainers] = useState<Trainer[]>([{ name: "", info: "", photo: null }]);
   const [reviews, setReviews] = useState<Review[]>([{ name: "", text: "" }]);
+  const [style, setStyle] = useState<SiteStyle>(DEFAULT_STYLE);
   const [accent, setAccent] = useState<string>("auto");
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
@@ -96,6 +99,7 @@ export function Builder() {
       whatsapp,
       instagram: instagram.trim(),
       accent,
+      style,
       services: cleanServices.map((s) => ({
         name: s.name,
         packages: s.packages.map((p) => ({ sessions: Number(p.sessions), price: Number(p.price.replace(/\D/g, "")) || null })),
@@ -383,6 +387,35 @@ export function Builder() {
                   + Yorum ekle
                 </button>
               ) : null}
+            </Question>
+          )}
+
+          {step === "style" && (
+            <Question title="Siten nasıl görünsün?" sub="Renkler yine logondan gelir; burada yazı ve düzen tarzını seçiyorsun. Sonra istersen değiştiririz.">
+              <div className={`sy-styles ${styleFontVars}`} role="radiogroup" aria-label="Site tarzı">
+                {SITE_STYLES.map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    role="radio"
+                    aria-checked={style === o.key}
+                    className={`sy-style${style === o.key ? " sel" : ""}`}
+                    data-style={o.key}
+                    onClick={() => setStyle(o.key)}
+                  >
+                    <span className="sy-style-mock" aria-hidden>
+                      <span className="sy-mock-label">Reformer · Pilates</span>
+                      <span className="sy-mock-title">İlk adımı bugün at.</span>
+                      <span className="sy-mock-row">
+                        <span className="sy-mock-btn" />
+                        <span className="sy-mock-photo" />
+                      </span>
+                    </span>
+                    <span className="sy-style-name">{o.name}</span>
+                    <small>{o.note}</small>
+                  </button>
+                ))}
+              </div>
             </Question>
           )}
 

@@ -164,3 +164,35 @@ body { margin: 0; }
   .sy-pkg { grid-template-columns: 1fr 1.2fr auto; gap: 8px; }
   .sy-options-2 { flex-direction: column; }
 }
+
+/* Style step: four tiles, each a tiny honest sketch of the preset (its font, button and photo shape). */
+.sy-styles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sy-style {
+  display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 10px 10px 14px; text-align: left;
+  border-radius: 20px; border: 1.5px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); color: #fff;
+  font: inherit; cursor: pointer; transition: border-color 160ms ease, background 160ms ease, transform 120ms ease;
+}
+.sy-style:active { transform: scale(0.985); }
+.sy-style.sel { border-color: var(--mg); background: rgba(255,0,255,0.1); box-shadow: 0 0 28px rgba(255,0,255,0.3); }
+.sy-style-name { font-size: 16px; font-weight: 900; padding: 4px 4px 0; }
+.sy-style small { font-size: 12px; line-height: 1.35; color: rgba(255,255,255,0.6); padding: 0 4px; }
+.sy-style-mock { display: flex; flex-direction: column; gap: 6px; height: 118px; padding: 12px; border-radius: 13px; background: #f6f2ee; color: #241a1f; overflow: hidden; }
+.sy-mock-label { font-size: 7px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.55; }
+.sy-mock-title { font-size: 19px; line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; font-family: var(--font-sans), sans-serif; }
+.sy-mock-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: auto; }
+.sy-mock-btn { width: 52px; height: 15px; border-radius: 99px; background: #241a1f; }
+.sy-mock-photo { width: 34px; height: 40px; border-radius: 8px; background: linear-gradient(160deg, #d9c7bd, #a88f84); }
+.sy-style[data-style="luks"] .sy-mock-title { font-family: var(--font-lux), serif; font-weight: 500; font-size: 21px; letter-spacing: -0.01em; }
+.sy-style[data-style="luks"] .sy-mock-label, .sy-style[data-style="luks"] .sy-style-mock { text-align: center; align-items: center; }
+.sy-style[data-style="luks"] .sy-mock-btn { border-radius: 1px; width: 58px; height: 13px; }
+.sy-style[data-style="luks"] .sy-mock-photo { border-radius: 99px 99px 0 0; outline: 1px solid #241a1f55; outline-offset: 2px; }
+.sy-style[data-style="modern"] .sy-mock-title { font-family: var(--font-bold), sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.045em; }
+.sy-style[data-style="modern"] .sy-mock-label { display: inline-block; align-self: flex-start; padding: 2px 6px; border-radius: 99px; background: #d6249f; color: #fff; opacity: 1; }
+.sy-style[data-style="modern"] .sy-mock-btn { background: #d6249f; border-radius: 6px; }
+.sy-style[data-style="modern"] .sy-mock-photo { border-radius: 8px; box-shadow: 4px 4px 0 #d6249f; border: 1.5px solid #241a1f; }
+.sy-style[data-style="sade"] .sy-style-mock { align-items: center; text-align: center; }
+.sy-style[data-style="sade"] .sy-mock-title { font-family: var(--font-soft), sans-serif; font-weight: 400; font-size: 18px; letter-spacing: -0.02em; }
+.sy-style[data-style="sade"] .sy-mock-row { justify-content: center; flex-direction: column; align-items: center; gap: 6px; }
+.sy-style[data-style="sade"] .sy-mock-photo { width: 92px; height: 22px; border-radius: 10px; }
+.sy-style[data-style="sade"] .sy-mock-btn { width: 46px; height: 12px; }
+@media (max-width: 360px) { .sy-style-mock { height: 104px; } .sy-mock-title { font-size: 17px; } }

@@ -3,6 +3,7 @@ import seed from "@/data/site.json";
 import type { PricedService, SectionKey, Site } from "@/lib/site";
 import type { SiteCopy } from "@/lib/ai";
 import { heroLines } from "@/lib/hero-lines";
+import { DEFAULT_STYLE, type SiteStyle } from "@/lib/styles";
 
 export type BuilderInput = {
   studio: string;
@@ -13,6 +14,8 @@ export type BuilderInput = {
   instagram: string;
   /** "auto" = from the logo; "" = white buttons; otherwise a hex colour. */
   accent: string;
+  /** Look preset; missing on inputs saved before presets existed. */
+  style?: SiteStyle;
   services: { name: string; packages: { sessions: number; price: number | null }[] }[];
   trainers: { name: string; info: string }[];
   reviews: { name: string; text: string }[];
@@ -78,6 +81,7 @@ export function buildSite(input: BuilderInput, copy: SiteCopy, assets: BuilderAs
 
   return {
     ...base,
+    style: input.style ?? DEFAULT_STYLE,
     brand: {
       name: input.studio,
       wordmark: input.studio.toLocaleLowerCase("tr"),

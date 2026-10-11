@@ -1,0 +1,136 @@
+/* Style presets ("Tarz"). SitePage sets data-style on .site-root.
+   "editoryal" is the original template and has no rules here. The other three
+   only change type, shapes and layout; every colour still comes from the
+   logo-derived theme variables (--bg, --ink, --cta…), so light pages keep
+   their silk + glass and dark pages their tinted ground. */
+
+.site-root { --display: var(--sans); }
+.site-root :is(h1, h2, h3) { font-family: var(--display); }
+
+/* Shared by the three new presets: a framed hero photo instead of the
+   editorial fade, without the orbit / vertical cities / signature. */
+.site-root:is([data-style="luks"], [data-style="modern"], [data-style="sade"]) .hero-portrait {
+  -webkit-mask-image: none; mask-image: none;
+  height: auto; aspect-ratio: 4 / 5; width: min(100%, 440px);
+  justify-self: center; align-self: center; margin: 12px 0 0;
+  background: color-mix(in srgb, var(--ink) 6%, var(--bg));
+}
+.site-root:is([data-style="luks"], [data-style="modern"], [data-style="sade"]) .hero-photo-blend { -webkit-mask-image: none; mask-image: none; background: transparent; }
+.site-root:is([data-style="luks"], [data-style="modern"], [data-style="sade"]) .hero-person {
+  inset: 0; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; mix-blend-mode: normal;
+}
+.site-root:is([data-style="luks"], [data-style="modern"], [data-style="sade"]) :is(.portrait-orbit, .hero-cities, .hero-signature) { display: none; }
+.site-root:is([data-style="luks"], [data-style="modern"], [data-style="sade"]) .hero-section { background: none; }
+.site-root:is([data-style="modern"], [data-style="sade"]) .texture { display: none; }
+
+/* ============================== LÜKS ==============================
+   Boutique-hotel calm: upright serif, centred copy, arched photos with a
+   hairline frame, square buttons in spaced capitals. */
+.site-root[data-style="luks"] { --display: var(--font-lux), "Cormorant Garamond", Georgia, serif; --hair: color-mix(in srgb, var(--ink) 22%, transparent); }
+.site-root[data-style="luks"] :is(h1, h2) { font-weight: 500; letter-spacing: -0.012em; line-height: 1.04; }
+.site-root[data-style="luks"] h3 { font-weight: 600; letter-spacing: -0.01em; }
+.site-root[data-style="luks"] h2 { font-size: clamp(40px, 5vw, 68px); }
+.site-root[data-style="luks"] .hero h1 { font-size: clamp(50px, 6vw, 88px); line-height: 1.02; letter-spacing: -0.015em; }
+.site-root[data-style="luks"] .section { padding-block: 130px; }
+.site-root[data-style="luks"] .section-label { letter-spacing: 0.32em; font-weight: 600; }
+.site-root[data-style="luks"] .section-label::after { content: ""; width: 28px; height: 1px; background: currentColor; opacity: 0.7; }
+/* Centred hero copy and headings. */
+.site-root[data-style="luks"] .hero-copy { text-align: center; }
+.site-root[data-style="luks"] :is(.hero-copy .section-label, .shimmer-line, .section-heading .section-label, .pricing-layout .section-label) { margin-inline: auto; }
+.site-root[data-style="luks"] .hero-actions { justify-content: center; }
+.site-root[data-style="luks"] .section-heading { display: block; text-align: center; }
+.site-root[data-style="luks"] .pricing-layout > div:first-child { text-align: center; }
+/* Arched photos with a hairline frame. */
+.site-root[data-style="luks"] .hero-portrait { border-radius: 999px 999px 6px 6px; outline: 1px solid var(--hair); outline-offset: 10px; width: min(100% - 24px, 420px); margin-top: 22px; }
+.site-root[data-style="luks"] .gallery-item { border-radius: 999px 999px 6px 6px; border-color: var(--hair); }
+.site-root[data-style="luks"] .trainer-photo { border-radius: 999px 999px 4px 4px; }
+/* Square, spaced-capital buttons. */
+.site-root[data-style="luks"] .button { border-radius: 2px; text-transform: uppercase; letter-spacing: 0.16em; font-size: 10.5px; gap: 16px; padding: 8px 18px 8px 24px; min-height: 54px; }
+.site-root[data-style="luks"] .button > span { border: 0; width: 18px; height: 18px; }
+.site-root[data-style="luks"] .pi-cta { border-radius: 2px; text-transform: uppercase; letter-spacing: 0.16em; font-size: 12px; }
+/* Fine cards: small radius, hairline, no inner rings. */
+.site-root[data-style="luks"] :is(.tm-card, .trainer, .pi, .booking-card) { border-radius: 4px; border-color: var(--hair); box-shadow: none; }
+.site-root[data-style="luks"] :is(.pi-plan, .pi-frame, .pi-toggle, .pi-thumb, .pi-toggle-btn) { border-radius: 3px; }
+.site-root[data-style="luks"] .tm-card blockquote { font-family: var(--display); font-size: 19px; line-height: 1.45; font-weight: 500; }
+.site-root[data-style="luks"] .tm-avatar { font-family: var(--display); font-style: normal; font-weight: 600; }
+.site-root[data-style="luks"] .journey-dot { font-family: var(--display); font-size: 19px; font-weight: 600; background: transparent; }
+.site-root[data-style="luks"] .pi-plan-name { font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: 0; }
+.site-root[data-style="luks"] .marquee-group { font-family: var(--display); font-style: italic; font-weight: 500; }
+@media (max-width: 640px) {
+  .site-root[data-style="luks"] .section { padding-block: 80px; }
+  .site-root[data-style="luks"] .hero h1 { font-size: clamp(44px, 12.5vw, 64px); }
+  .site-root[data-style="luks"] .hero-actions { flex-direction: column; align-items: center; gap: 12px; }
+  .site-root[data-style="luks"] .hero-actions .button { min-width: 250px; justify-content: space-between; }
+  .site-root[data-style="luks"] .tm-card blockquote { font-size: 18px; }
+}
+
+/* ============================== MODERN ==============================
+   Confident and graphic: heavy grotesk, brand-colour chips and buttons,
+   thick outlines with a hard offset shadow. */
+.site-root[data-style="modern"] {
+  --display: var(--font-bold), "Bricolage Grotesque", Arial, sans-serif;
+  --hard: color-mix(in srgb, var(--ink) 88%, var(--bg));
+}
+.site-root[data-style="modern"] :is(h1, h2, h3) { font-weight: 800; letter-spacing: -0.045em; line-height: 1; }
+.site-root[data-style="modern"] h2 { font-size: clamp(38px, 5vw, 68px); }
+.site-root[data-style="modern"] .hero h1 { font-size: clamp(52px, 6.4vw, 94px); letter-spacing: -0.05em; }
+.site-root[data-style="modern"] .section-label { background: var(--cta); color: var(--cta-ink); padding: 7px 13px; border-radius: 99px; letter-spacing: 0.14em; }
+.site-root[data-style="modern"] .section-label::before { display: none; }
+.site-root[data-style="modern"] .button { background: var(--cta); color: var(--cta-ink); border: 2px solid var(--hard); border-radius: 16px; font-size: 13px; gap: 16px; box-shadow: 4px 4px 0 var(--hard); }
+.site-root[data-style="modern"] .button > span { border: 0; border-radius: 10px; background: color-mix(in srgb, var(--cta-ink) 14%, transparent); }
+.site-root[data-style="modern"] .button-ghost { background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); }
+.site-root[data-style="modern"] .button-ghost > span { background: color-mix(in srgb, var(--ink) 9%, transparent); }
+.site-root[data-style="modern"] .button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--hard); }
+.site-root[data-style="modern"] .hero-portrait { border-radius: 28px; border: 2px solid var(--hard); box-shadow: 12px 12px 0 var(--cta); width: min(100% - 14px, 440px); margin: 16px 14px 14px 0; }
+.site-root[data-style="modern"] :is(.tm-card, .trainer, .pi, .booking-card, .gallery-item) { border: 2px solid var(--hard); border-radius: 22px; box-shadow: 5px 5px 0 var(--hard); }
+.site-root[data-style="modern"] .tm-row { padding-block: 2px 9px; }
+.site-root[data-style="modern"] .gallery-strip { padding-bottom: 12px; }
+.site-root[data-style="modern"] :is(.pi-plan, .pi-toggle-wrap .pi-toggle-btn) { border-width: 2px; }
+.site-root[data-style="modern"] .pi-frame { border: 3px solid var(--cta); }
+.site-root[data-style="modern"] :is(.pi-thumb, .pi-toggle-wrap .pi-toggle-btn[aria-selected="true"]) { background: var(--cta); }
+.site-root[data-style="modern"] :is(.pi-toggle-btn[aria-selected="true"], .pi-toggle-wrap .pi-toggle-btn[aria-selected="true"]) { color: var(--cta-ink); }
+.site-root[data-style="modern"] .pi-cta { background: var(--cta); color: var(--cta-ink); border: 2px solid var(--hard); border-radius: 16px; box-shadow: 4px 4px 0 var(--hard); }
+.site-root[data-style="modern"] .pi-plan-name { font-family: var(--display); font-weight: 800; }
+.site-root[data-style="modern"] .journey-dot { border-radius: 12px; border-width: 2px; font-family: var(--display); }
+.site-root[data-style="modern"] .journey-step[data-state="current"] .journey-dot { background: var(--cta); border-color: var(--hard); color: var(--cta-ink); }
+.site-root[data-style="modern"] .tm-avatar { background: var(--cta); color: var(--cta-ink); border: 0; font: 800 15px var(--display); }
+.site-root[data-style="modern"] .marquee-group { font: 800 clamp(40px, 6vw, 86px)/1.15 var(--display); letter-spacing: -0.045em; }
+.site-root[data-style="modern"] .marquee-star { color: var(--cta); }
+@media (max-width: 640px) {
+  .site-root[data-style="modern"] .hero h1 { font-size: clamp(46px, 13.5vw, 72px); }
+  .site-root[data-style="modern"] .marquee-group { font-size: 44px; }
+}
+
+/* ============================== SADE ==============================
+   Quiet and airy: one soft geometric family, everything centred,
+   pill buttons, borderless cards with a soft shadow. */
+.site-root[data-style="sade"] { --display: var(--font-soft), "Outfit", Arial, sans-serif; font-family: var(--display); }
+.site-root[data-style="sade"] :is(h1, h2, h3) { font-weight: 400; letter-spacing: -0.025em; line-height: 1.12; }
+.site-root[data-style="sade"] h2 { font-size: clamp(34px, 4vw, 54px); }
+.site-root[data-style="sade"] .hero h1 { font-size: clamp(46px, 5.4vw, 76px); letter-spacing: -0.035em; }
+.site-root[data-style="sade"] .hero { grid-template-columns: 1fr; justify-items: center; text-align: center; min-height: 0; padding-block: 64px 28px; gap: 44px; }
+.site-root[data-style="sade"] :is(.hero-copy .section-label, .shimmer-line, .section-heading .section-label, .pricing-layout .section-label) { margin-inline: auto; }
+.site-root[data-style="sade"] .hero-actions { justify-content: center; }
+.site-root[data-style="sade"] .section-label { letter-spacing: 0.18em; font-weight: 500; }
+.site-root[data-style="sade"] .section-label::before { display: none; }
+.site-root[data-style="sade"] .section-heading { display: block; text-align: center; }
+.site-root[data-style="sade"] .pricing-layout > div:first-child { text-align: center; }
+.site-root[data-style="sade"] .hero-portrait { border-radius: 32px; width: min(100%, 460px); box-shadow: 0 30px 60px -36px color-mix(in srgb, var(--ink) 45%, transparent); }
+.site-root[data-style="sade"] .button { border-radius: 999px; gap: 12px; padding: 8px 14px 8px 24px; min-height: 52px; font-size: 14px; font-weight: 500; }
+.site-root[data-style="sade"] .button > span { border: 0; width: 20px; height: 20px; }
+.site-root[data-style="sade"] :is(.tm-card, .trainer, .pi, .booking-card) {
+  border-radius: 28px; border-color: color-mix(in srgb, var(--ink) 7%, transparent);
+  box-shadow: 0 22px 44px -30px color-mix(in srgb, var(--ink) 40%, transparent);
+}
+.site-root[data-style="sade"] .gallery-item { border-radius: 28px; border: 0; }
+.site-root[data-style="sade"] .pi-plan { border-color: color-mix(in srgb, var(--ink) 10%, transparent); border-radius: 20px; }
+.site-root[data-style="sade"] :is(.pi-cta, .pi-plan-name) { font-weight: 500; }
+.site-root[data-style="sade"] .journey-dot { font-weight: 500; }
+.site-root[data-style="sade"] .tm-avatar { font: 500 15px var(--display); }
+.site-root[data-style="sade"] .marquee-group { font: 300 clamp(36px, 5vw, 70px)/1.25 var(--display); letter-spacing: -0.03em; }
+@media (max-width: 640px) {
+  .site-root[data-style="sade"] .hero { padding-block: 44px 20px; gap: 30px; }
+  .site-root[data-style="sade"] .hero h1 { font-size: clamp(40px, 11vw, 58px); }
+  .site-root[data-style="sade"] .hero-portrait { width: 100%; }
+  .site-root[data-style="sade"] .marquee-group { font-size: 40px; }
+}

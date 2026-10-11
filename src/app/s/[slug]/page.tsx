@@ -4,10 +4,11 @@ import { notFound } from "next/navigation";
 import SitePage from "@/components/site/site-page";
 import { PreviewBar } from "@/components/site/preview-bar";
 import { getSite } from "@/lib/store";
+import { isSiteStyle } from "@/lib/styles";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = { params: Promise<{ slug: string }>; searchParams: Promise<{ stil?: string | string[] }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const s = await getSite((await params).slug);
@@ -21,10 +22,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function Page({ params }: Props) {
+export default async function Page({ params, searchParams }: Props) {
   const { slug } = await params;
-  const s = await getSite(slug);
-  if (!s) notFound();
+  const stored = await getSite(slug);
+  if (!stored) notFound();
+  // "?stil=luks" shows the same site in another style (for comparing; nothing is saved).
+  const { stil } = await searchParams;
+  const s = isSiteStyle(stil) ? { ...stored, style: stil } : stored;
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";

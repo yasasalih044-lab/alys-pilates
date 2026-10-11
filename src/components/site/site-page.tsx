@@ -14,7 +14,10 @@ import { TestimonialMarquee } from "@/components/ui/testimonial-marquee";
 import { PricingInteraction } from "@/components/ui/pricing-interaction";
 import { EdgeBlur } from "@/components/ui/edge-blur";
 import { SilkBackground } from "@/components/ui/silk-background";
+import { DEFAULT_STYLE } from "@/lib/styles";
+import { styleFontVars } from "@/app/style-fonts";
 import "@/app/site.css";
+import "@/app/site-styles.css";
 
 function Star() {
   return (
@@ -425,7 +428,7 @@ function Marquee({ s }: { s: Site }) {
 export default function SitePage({ s, children }: { s: Site; children?: ReactNode }) {
   const light = s.theme.mode === "light";
   return (
-    <div className={`site-root${light ? " site-light" : ""}`}>
+    <div className={`site-root${light ? " site-light" : ""} ${styleFontVars}`} data-style={s.style ?? DEFAULT_STYLE}>
       <style>{`:root{${themeCss(s)}}`}</style>
       {light ? <SilkBackground bg={s.theme.bg} tint={s.theme.accent || s.theme.ink} /> : null}
       <div className="texture" aria-hidden style={{ "--texture": `url(${s.images.texture})` } as CSSProperties} />
