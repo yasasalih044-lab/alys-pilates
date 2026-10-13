@@ -30,7 +30,10 @@ export function SilkBackground({ bg, tint }: { bg: string; tint: string }) {
 
     const base = rgb(bg);
     // Folds in a soft shade of the studio colour, crests a touch lighter than the page.
-    const low = mix(base, rgb(tint), 0.4);
+    // Neon brand colours (e.g. #ff00ff) would turn the whole page that colour: tint them less.
+    const t = rgb(tint);
+    const sat = (Math.max(...t) - Math.min(...t)) / 255;
+    const low = mix(base, t, sat > 0.8 ? 0.2 : 0.4);
     const high = mix(base, [255, 255, 255], 0.55);
 
     const draw = () => {

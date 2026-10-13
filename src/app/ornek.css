@@ -27,3 +27,7 @@
   .ornek-ribbon__styles { order: 2; }
   .ornek-ribbon__group a { padding: 0 7px; font-size: 11.5px; }
 }
+
+/* Reformer Dijital logo is two lines (REFORMER / dijital): give it room in the header. */
+.site-root:has(.ornek-ribbon) .brand img { height: 52px; }
+@media (max-width: 640px) { .site-root:has(.ornek-ribbon) .brand img { height: 44px; } }

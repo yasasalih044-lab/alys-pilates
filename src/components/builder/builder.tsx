@@ -197,7 +197,7 @@ export function Builder() {
                 <button className="sy-btn" onClick={next}>
                   Siteni yap <Arrow />
                 </button>
-                <a className="sy-link" href="/s/payluna" target="_blank" rel="noopener noreferrer">
+                <a className="sy-link" href="/ornek/editoryal" target="_blank" rel="noopener noreferrer">
                   Örnek siteyi gör
                 </a>
               </div>

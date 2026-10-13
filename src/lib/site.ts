@@ -37,6 +37,8 @@ export type Site = {
     mode?: "dark" | "light";
     /** "color" keeps photos in colour; default "mono" (black and white). */
     photos?: "mono" | "color";
+    /** Button text colour override (brand rule, e.g. white on magenta); otherwise picked by contrast. */
+    ctaInk?: string;
   };
   images: {
     hero: string;

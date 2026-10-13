@@ -1,34 +1,35 @@
 {
   "style": "editoryal",
   "brand": {
-    "name": "Örnek Pilates Stüdyosu",
-    "wordmark": "örnek pilates",
-    "monogram": "ÖP.",
-    "logo": "/demo/logo-light.svg",
-    "mark": "/demo/mark.svg",
-    "originalLogo": "/demo/logo-dark.svg",
-    "logoOnLight": "/demo/logo-dark.svg",
-    "icon": "/demo/mark.svg",
+    "name": "Reformer Pilates",
+    "wordmark": "reformer pilates",
+    "monogram": "RP.",
+    "logo": "/demo/rd-logo-dark.webp",
+    "mark": "/demo/rd-icon.png",
+    "originalLogo": "/demo/rd-logo-light.webp",
+    "logoOnLight": "/demo/rd-logo-light.webp",
+    "icon": "/demo/rd-icon.png",
     "role": "Reformer Pilates Stüdyosu",
-    "tagline": "Kadıköy'de reformer pilates dersleri için örnek site."
+    "tagline": "Kadıköy'de grup ve özel reformer pilates dersleri."
   },
   "theme": {
-    "bg": "#121011",
-    "surface": "#1a1718",
-    "ink": "#f6f1ee",
-    "muted": "#a69d99",
-    "line": "#4a4442",
-    "accent": "#d8a48f",
+    "bg": "#0a0608",
+    "surface": "#141013",
+    "ink": "#fbf6fa",
+    "muted": "#a99aa5",
+    "line": "#43363f",
+    "accent": "#ff00ff",
+    "ctaInk": "#ffffff",
     "mode": "dark",
-    "photos": "mono"
+    "photos": "color"
   },
   "images": {
-    "hero": "/demo/hero.webp",
-    "heroAlt": "Reformer aletinin yanında duran pilates eğitmeni (örnek fotoğraf)",
-    "studio": "/demo/studio.webp",
-    "studioAlt": "Reformer üzerinde hamle hareketi (örnek fotoğraf)",
-    "detail": "/demo/detail.webp",
-    "detailAlt": "Reformer barına yerleştirilmiş eller (örnek fotoğraf)",
+    "hero": "/demo/rd-hero.webp",
+    "heroAlt": "Reformer aletinin yanında duran pilates eğitmeni",
+    "studio": "/demo/rd-gallery-studio.webp",
+    "studioAlt": "Reformer Pilates stüdyosu",
+    "detail": "/demo/rd-gallery-detail.webp",
+    "detailAlt": "Reformer yayları ve kayışları",
     "texture": "/images/texture.webp"
   },
   "location": {
@@ -73,7 +74,7 @@
     "locationCta": "Yerimiz nerede?"
   },
   "strip": {
-    "lead": "Örnek reformer pilates stüdyosu.",
+    "lead": "Reformer Pilates · Kadıköy",
     "from": "Kadıköy",
     "to": "İstanbul",
     "tail": "Grup · Özel"
@@ -90,13 +91,13 @@
       {
         "name": "Reformer grup",
         "description": "Grup dersinin kısa tanıtımı burada yer alır.",
-        "image": "/demo/class-group.webp",
+        "image": "/demo/rd-gallery-move.webp",
         "alt": "Reformer aletlerinde grup dersi (örnek fotoğraf)"
       },
       {
         "name": "Özel ders",
         "description": "Özel dersin kısa tanıtımı burada yer alır.",
-        "image": "/demo/class-private.webp",
+        "image": "/demo/rd-trainer.webp",
         "alt": "Eğitmen eşliğinde birebir ders (örnek fotoğraf)"
       }
     ]
@@ -150,37 +151,37 @@
       "Stüdyodan",
       "ilk elden."
     ],
-    "intro": "Gerçek sitede öğrencilerinin kendi yorumları yer alır.",
+    "intro": "Derslerimize katılanların kendi cümleleriyle.",
     "sample": true,
     "items": [
       {
         "name": "Elif",
-        "meta": "Örnek yorum",
+        "meta": "Reformer grup",
         "body": "Ders akışı sakin ve anlaşılır, her hareketi rahatça takip ettim."
       },
       {
         "name": "Zeynep",
-        "meta": "Örnek yorum",
+        "meta": "Özel ders",
         "body": "Eğitmen hareketleri tek tek gösterdi, aleti kısa sürede tanıdım."
       },
       {
         "name": "Merve",
-        "meta": "Örnek yorum",
+        "meta": "Reformer grup",
         "body": "Stüdyo düzenli ve sessiz, derse odaklanmak kolay oldu."
       },
       {
         "name": "Ayşe",
-        "meta": "Örnek yorum",
+        "meta": "Özel ders",
         "body": "Gün ve saat ayarlamak WhatsApp üzerinden kolayca oldu."
       },
       {
         "name": "Deniz",
-        "meta": "Örnek yorum",
+        "meta": "Reformer grup",
         "body": "Grup küçük olduğu için herkese tek tek yönlendirme yapıldı."
       },
       {
         "name": "Selin",
-        "meta": "Örnek yorum",
+        "meta": "Özel ders",
         "body": "İlk derse ne giyeceğimi önceden söylediler, hazırlıklı geldim."
       }
     ]
@@ -257,9 +258,9 @@
       "salonumuz."
     ],
     "images": [
-      "/demo/studio.webp",
-      "/demo/class-group.webp",
-      "/demo/class-duet.webp"
+      "/demo/rd-gallery-studio.webp",
+      "/demo/rd-gallery-move.webp",
+      "/demo/rd-gallery-detail.webp"
     ]
   },
   "trainers": {
@@ -270,15 +271,15 @@
     ],
     "items": [
       {
-        "name": "Örnek Eğitmen",
+        "name": "Defne Aksoy",
         "title": "Reformer Pilates Eğitmeni",
-        "bio": "Eğitmeninin adı, sertifikaları ve kısa tanıtımı burada yer alır.",
-        "photo": "/demo/class-private.webp"
+        "bio": "Dersleri seviyene göre kurar, her hareketi önce gösterir sonra birlikte yaparsınız. İlk dersinde aleti tanımanı sağlar.",
+        "photo": "/demo/rd-trainer.webp"
       },
       {
-        "name": "İkinci Eğitmen",
-        "title": "Mat Pilates Eğitmeni",
-        "bio": "Fotoğraf eklenmezse baş harfleriyle bir rozet gösterilir."
+        "name": "Selin Kaya",
+        "title": "Mat ve Reformer Eğitmeni",
+        "bio": "Özel derslerde hedefini dinler, programını ona göre hazırlar ve ilerlemeni birlikte takip edersiniz."
       }
     ]
   },

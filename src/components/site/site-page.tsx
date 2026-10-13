@@ -396,7 +396,7 @@ function themeCss(s: Site): string {
     "--accent": cta,
     "--cta": cta,
     // Whichever reads better on the button: white, or the page's dark ink (pastel buttons).
-    "--cta-ink": 1.05 / (luminance(cta) + 0.05) >= (luminance(cta) + 0.05) / (luminance(dark) + 0.05) ? "#ffffff" : dark,
+    "--cta-ink": t.ctaInk || (1.05 / (luminance(cta) + 0.05) >= (luminance(cta) + 0.05) / (luminance(dark) + 0.05) ? "#ffffff" : dark),
     "--scheme": light ? "light" : "dark",
     // Colour photos fade into the page itself; B&W ones into near-black (the ALYS look).
     // Light pages sit on the silk texture, so photos fade to transparent instead of a flat colour.

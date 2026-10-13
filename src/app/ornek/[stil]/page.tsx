@@ -13,8 +13,8 @@ export const dynamic = "force-dynamic";
 
 /** Example studio shown in each style from the form's "Önizle" link. Not a real studio, never indexed. */
 const ORNEK = ornek as Site;
-/** Light variant (?tema=acik): exercises the silk background and the glass cards. */
-const LIGHT: Site["theme"] = { bg: "#f6f1ec", surface: "#fffdfb", ink: "#2b2220", muted: "#7d716c", line: "#e3dad3", accent: "#b0705a", mode: "light", photos: "mono" };
+/** Light variant (?tema=acik): Reformer Dijital magenta on white — silk background and glass cards. */
+const LIGHT: Site["theme"] = { bg: "#ffffff", surface: "#ffffff", ink: "#1c0d18", muted: "#76626f", line: "#eadbe5", accent: "#ff00ff", ctaInk: "#ffffff", mode: "light", photos: "color" };
 
 type Props = { params: Promise<{ stil: string }>; searchParams: Promise<{ tema?: string | string[] }> };
 
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `Örnek site · ${nameOf(stil)} | Site Yapıcı`,
     description: "Site Yapıcı ile oluşturulan sitelerin bu tarzdaki örneği.",
     robots: { index: false, follow: false },
-    icons: { icon: "/demo/mark.svg" },
+    icons: { icon: "/demo/rd-icon.png" },
   };
 }
 
