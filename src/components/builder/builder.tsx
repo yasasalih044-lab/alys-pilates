@@ -6,6 +6,14 @@ import { DEFAULT_STYLE, SITE_STYLES, type SiteStyle } from "@/lib/styles";
 const RD_WHATSAPP = "905454498280";
 
 const SERVICE_SUGGESTIONS = ["Reformer grup", "Özel ders", "Düet", "Mat pilates", "Fonksiyonel antrenman", "Hamile pilatesi"];
+const GROUNDS = [
+  { value: "auto", label: "Logodan otomatik", note: "Logonun kendi zemini" },
+  { value: "beyaz", label: "Beyaz", note: "Ferah, açık", sw: "#ffffff" },
+  { value: "krem", label: "Krem", note: "Sıcak, yumuşak", sw: "#f7f2ea" },
+  { value: "siyah", label: "Siyah", note: "Koyu, şık", sw: "#0b0b0c" },
+] as const;
+type Ground = (typeof GROUNDS)[number]["value"];
+
 const SWATCHES = [
   { label: "Pembe", value: "#d6249f" },
   { label: "Mor", value: "#7a3fb0" },
@@ -49,6 +57,7 @@ export function Builder() {
   const [reviews, setReviews] = useState<Review[]>([{ name: "", text: "" }]);
   const [style, setStyle] = useState<SiteStyle>(DEFAULT_STYLE);
   const [accent, setAccent] = useState<string>("auto");
+  const [ground, setGround] = useState<Ground>("auto");
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -135,6 +144,7 @@ export function Builder() {
       whatsapp,
       instagram: instagram.trim(),
       accent,
+      ground,
       style,
       services: cleanServices.map((s) => ({
         name: s.name,
@@ -453,7 +463,28 @@ export function Builder() {
           )}
 
           {step === "color" && (
-            <Question title="Renkler" sub="Varsayılan: logondaki renklerden otomatik. İstersen buton rengini kendin seç.">
+            <Question title="Renkler" sub="Varsayılan: logondaki renklerden otomatik. İstersen sitenin zeminini ve buton rengini kendin seç.">
+              <p className="sy-label sy-group-label">Sitenin zemini</p>
+              <div className="sy-swatches sy-grounds" role="radiogroup" aria-label="Sitenin zemini">
+                {GROUNDS.map((g) => (
+                  <button
+                    key={g.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={ground === g.value}
+                    className={`sy-swatch sy-ground${"sw" in g ? "" : " sy-auto"}${ground === g.value ? " sel" : ""}`}
+                    style={"sw" in g ? ({ "--sw": g.sw } as React.CSSProperties) : undefined}
+                    onClick={() => setGround(g.value)}
+                  >
+                    <i aria-hidden />
+                    <span>
+                      {g.label}
+                      <small>{g.note}</small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="sy-label sy-group-label">Buton rengi</p>
               <div className="sy-swatches">
                 <button type="button" className={`sy-swatch sy-auto${accent === "auto" ? " sel" : ""}`} aria-pressed={accent === "auto"} onClick={() => setAccent("auto")}>
                   <i aria-hidden />

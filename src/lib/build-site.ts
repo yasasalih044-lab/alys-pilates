@@ -4,6 +4,7 @@ import type { PricedService, SectionKey, Site } from "@/lib/site";
 import type { SiteCopy } from "@/lib/ai";
 import { heroLines } from "@/lib/hero-lines";
 import { DEFAULT_STYLE, type SiteStyle } from "@/lib/styles";
+import type { GroundChoice } from "@/lib/palette";
 
 export type BuilderInput = {
   studio: string;
@@ -16,6 +17,8 @@ export type BuilderInput = {
   accent: string;
   /** Look preset; missing on inputs saved before presets existed. */
   style?: SiteStyle;
+  /** Page ground ("Sitenin zemini"); missing = auto (the logo's own ground). */
+  ground?: GroundChoice;
   services: { name: string; packages: { sessions: number; price: number | null }[] }[];
   trainers: { name: string; info: string }[];
   reviews: { name: string; text: string }[];

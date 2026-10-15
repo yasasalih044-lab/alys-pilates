@@ -2,18 +2,19 @@ import "server-only";
 import sharp from "sharp";
 import {
   asReference,
-  colourLogoOnTransparent,
+  logoContrast,
+  logoCutout,
+  logoInColour,
   fallbackCopy,
   galleryImage,
   generateCopy,
-  logoOnDark,
   heroImage,
   roomAsHero,
   trainerPortrait,
   whiteLogo,
 } from "@/lib/ai";
 import { buildSite, type BuilderInput } from "@/lib/build-site";
-import { colorName, paletteFromLogo } from "@/lib/palette";
+import { colorName, paletteFromLogo, themeForGround, type BrandPalette } from "@/lib/palette";
 import { pricingServices, type Site } from "@/lib/site";
 import { makeSlug, readUpload, saveSite, saveUpload, type StoredSite } from "@/lib/store";
 
@@ -47,6 +48,8 @@ export async function generateSite(
   await Promise.all(files.trainers.map(async (t, i) => (t ? saveUpload(slug, `trainer-src-${i}.jpg`, await asReference(t)) : undefined)));
 
   const palette = await paletteFromLogo(logo, rooms);
+  // The owner can pick the page ground ("Sitenin zemini"); auto = the logo's own ground.
+  if (input.ground && input.ground !== "auto") palette.theme = themeForGround(palette, input.ground);
   const mode = palette.theme.mode ?? "dark";
   const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
   const outfit = accent ? colorName(rgb(accent)) : mode === "light" ? "soft sand beige" : "black";
@@ -64,28 +67,7 @@ export async function generateSite(
       console.error("copy generation failed, using approved fallback copy", (e as Error).message);
       return fallbackCopy(copyInput);
     }),
-    (async () => {
-      const colour = await colourLogoOnTransparent(logo, palette.framed);
-      const onLight = await saveUpload(slug, `logo-colour-${v}.webp`, colour);
-      // Tab icon: the same colour logo, centred on the page colour.
-      const icon = await saveUpload(
-        slug,
-        `icon-${v}.png`,
-        await sharp(await sharp(colour).resize(84, 84, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer())
-          .extend({ top: 6, bottom: 6, left: 6, right: 6, background: palette.theme.bg })
-          .flatten({ background: palette.theme.bg })
-          .png()
-          .toBuffer(),
-      );
-      if (mode === "light") return { logo: onLight, onLight, icon };
-      const white = await whiteLogo(logo, "image/png")
-        .then((w) => saveUpload(slug, `logo-white-${v}.webp`, w))
-        .catch(async (e) => {
-          console.error("white logo failed, keying out the logo ground instead", (e as Error).message);
-          return saveUpload(slug, `logo-dark-${v}.webp`, await logoOnDark(logo));
-        });
-      return { logo: white, onLight, icon };
-    })(),
+    brandLogos(slug, v, logo, palette),
     heroImage({ mode, outfit, colours: palette.names, rooms })
       .then((img) => saveUpload(slug, `hero-${v}.webp`, img))
       .catch(async (e) => {
@@ -128,6 +110,40 @@ export async function generateSite(
   await saveSite(slug, stored);
   console.log(`site saved: ${slug} (${input.studio}, ${input.district}, ${mode}, rooms=${rooms.length}, hero=${hero ?? "library"})`);
   return slug;
+}
+
+/**
+ * The logo files for a site: the cut-out logo (exact, never redrawn) for light
+ * pages, a full-white one for dark pages, and the tab icon.
+ */
+export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette) {
+  const mode = palette.theme.mode ?? "dark";
+  // The logo alone, cut from its ground by code (never redrawn).
+  const cut = await logoCutout(logo, palette.framed ? palette.ground : undefined);
+  // On a light page a logo that is itself light (white lettering) would vanish:
+  // use its exact shape in the page's ink instead.
+  const onLightImg = (await logoContrast(cut, palette.theme.bg)) < 1.6 && mode === "light" ? await logoInColour(cut, palette.theme.ink) : cut;
+  const onLight = await saveUpload(slug, `logo-colour-${v}.webp`, onLightImg);
+  // Tab icon: the page's logo, centred on the page colour.
+  const icon = await saveUpload(
+    slug,
+    `icon-${v}.png`,
+    await sharp(await sharp(mode === "light" ? onLightImg : await logoInColour(cut, "#ffffff")).resize(84, 84, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer())
+      .extend({ top: 6, bottom: 6, left: 6, right: 6, background: palette.theme.bg })
+      .flatten({ background: palette.theme.bg })
+      .png()
+      .toBuffer(),
+  );
+  if (mode === "light") return { logo: onLight, onLight, icon };
+  // Dark page: full-white logo from GPT; if it comes back as a box, the exact
+  // white silhouette of the cut-out logo instead.
+  const white = await whiteLogo(logo, "image/png")
+    .then((w) => saveUpload(slug, `logo-white-${v}.webp`, w))
+    .catch(async (e) => {
+      console.error("white logo refused, using the cut-out logo in white", (e as Error).message);
+      return saveUpload(slug, `logo-white-${v}.webp`, await logoInColour(cut, "#ffffff"));
+    });
+  return { logo: white, onLight, icon };
 }
 
 /** Rebuilds the form input of an older site that predates `_meta.input`. */

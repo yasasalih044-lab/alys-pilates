@@ -42,7 +42,7 @@ export function PricingInteraction({
         <div className={`pi-toggle${services.length > 3 ? " pi-toggle-wrap" : ""}`} role="tablist" aria-label="Hizmet">
           {services.map((s, i) => (
             <button
-              key={s.name}
+              key={`${i}-${s.name}`}
               type="button"
               role="tab"
               aria-selected={svc === i}
@@ -64,7 +64,7 @@ export function PricingInteraction({
       <div className="pi-plans" role="radiogroup" aria-label="Paket">
         {service.packages.map((p, i) => (
           <button
-            key={`${service.name}-${p.name}`}
+            key={`${svc}-${i}-${p.name}`}
             ref={(el) => {
               rows.current[i] = el;
             }}

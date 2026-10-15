@@ -163,11 +163,25 @@ export async function whiteLogo(file: Buffer, mime: string): Promise<Buffer> {
     .raw()
     .toBuffer({ resolveWithObject: true });
   const out = Buffer.alloc(info.width * info.height * 4);
+  let edge = 0;
+  let edgeAlpha = 0;
+  let solid = 0;
+  const ring = Math.round(Math.min(info.width, info.height) * 0.04);
   for (let i = 0; i < info.width * info.height; i++) {
     const v = data[i * info.channels];
     const a = v < 24 ? 0 : v > 232 ? 255 : Math.round(((v - 24) * 255) / 208);
     out.set([255, 255, 255, a], i * 4);
+    const x = i % info.width;
+    const y = (i - x) / info.width;
+    if (a > 127) solid++;
+    if (x < ring || y < ring || x >= info.width - ring || y >= info.height - ring) {
+      edge++;
+      edgeAlpha += a / 255;
+    }
   }
+  // GPT sometimes returns the logo still on its (light or textured) ground: a box,
+  // not a logo. Refuse it so the caller uses the exact code-made white version.
+  if (edgeAlpha / edge > 0.04 || solid > info.width * info.height * 0.5) throw new Error("white logo came back with its background");
   return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
     .trim({ threshold: 1 })
     .resize({ height: 200, withoutEnlargement: true })
@@ -283,74 +297,304 @@ export async function trainerPortrait(photo: Buffer): Promise<Buffer> {
   return forPhones(await imageCall(prompt, SIZES.trainer, [await asReference(photo)]), 600);
 }
 
-/* ------------------------------------------------------------------ */
-/* Light site: keep the colour logo, only its white ground becomes alpha (no AI). */
-/* ------------------------------------------------------------------ */
-
-export async function colourLogoOnTransparent(logo: Buffer, framed = false): Promise<Buffer> {
-  const { data, info } = await sharp(logo).flatten({ background: "#ffffff" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  if (framed) whitenFrame(data, info.width, info.height);
-  for (let i = 0; i < data.length; i += 4) {
-    const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
-    let a = 255 - Math.min(r, g, b);
-    a = a < 10 ? 0 : Math.min(255, Math.round(((a - 10) * 255) / 245));
-    if (a === 0) {
-      data[i + 3] = 0;
-      continue;
-    }
-    const k = 255 / a;
-    data[i] = Math.max(0, 255 - (255 - r) * k);
-    data[i + 1] = Math.max(0, 255 - (255 - g) * k);
-    data[i + 2] = Math.max(0, 255 - (255 - b) * k);
-    data[i + 3] = a;
-  }
-  return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
-}
 
 /**
- * Badge logos (white circle on a dark square): flood-fill the outer frame from
- * the image edges and paint it white, so only the badge's own drawing stays.
- * The logo itself is not touched.
+ * Logo → the logo alone on a transparent background, by code (no AI, the logo is
+ * never redrawn). Handles flat, gradient and textured (marble, paper) grounds,
+ * badge logos (disc on a square), and phone screenshots with bars or edge lines:
+ *  1. ground colours = clusters of the image border's colours,
+ *  2. the ground is everything connected to the border through those colours
+ *     (so letters that share the frame colour, inside a badge, are kept),
+ *     plus the badge disc (`badge` = its colour) when there is one,
+ *  3. each remaining pixel's opacity = its distance from the local ground
+ *     (mapped on a coarse grid, so gradients are followed); colour un-blended,
+ *  4. specks and thin lines stuck to the image edge are dropped.
+ * A logo that already has a transparent background is only trimmed.
  */
-function whitenFrame(data: Buffer, w: number, h: number) {
-  const at = (x: number, y: number) => (y * w + x) * 4;
-  const c0 = [data[0], data[1], data[2]];
-  const near = (i: number) => Math.hypot(data[i] - c0[0], data[i + 1] - c0[1], data[i + 2] - c0[2]) < 70;
-  const seen = new Uint8Array(w * h);
-  const stack: number[] = [];
-  for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
-  for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
-  while (stack.length) {
-    const p = stack.pop()!;
-    if (seen[p]) continue;
-    seen[p] = 1;
-    const x = p % w;
-    const y = (p - x) / w;
-    if (!near(at(x, y))) continue;
-    data.fill(255, at(x, y), at(x, y) + 3);
-    if (x > 0) stack.push(p - 1);
-    if (x < w - 1) stack.push(p + 1);
-    if (y > 0) stack.push(p - w);
-    if (y < h - 1) stack.push(p + w);
+export async function logoCutout(logo: Buffer, badge?: [number, number, number]): Promise<Buffer> {
+  const finish = (img: ReturnType<typeof sharp>) =>
+    img.trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
+  if ((await sharp(logo).metadata()).hasAlpha) {
+    // Already cut out = its border is (almost) fully transparent. A semi-transparent
+    // texture behind the logo does not count: that still has to be removed.
+    const { data, info } = await sharp(logo).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const r = Math.max(1, Math.round(Math.min(info.width, info.height) * 0.03));
+    let edge = 0;
+    let clear = 0;
+    for (let y = 0; y < info.height; y++)
+      for (let x = 0; x < info.width; x++) {
+        if (x >= r && y >= r && x < info.width - r && y < info.height - r) continue;
+        edge++;
+        if (data[(y * info.width + x) * 4 + 3] < 16) clear++;
+      }
+    if (clear > edge * 0.8) return finish(sharp(logo).ensureAlpha());
   }
-  // The badge's anti-aliased rim (grey between frame and badge) would stay as a
-  // faint ring: whiten a few pixels past the frame too.
-  const r = Math.max(2, Math.round(Math.min(w, h) / 60));
-  const frame = seen.map((v, p) => (v && data[p * 4] === 255 && data[p * 4 + 1] === 255 && data[p * 4 + 2] === 255 ? 1 : 0));
+  const { data, info } = await sharp(logo).flatten({ background: "#ffffff" }).raw().toBuffer({ resolveWithObject: true });
+  const { width: w, height: h, channels: ch } = info;
+  const N = w * h;
+  const col = (i: number): number[] => [data[i * ch], data[i * ch + 1], data[i * ch + 2]];
+  const dist = (a: number[], b: number[]) => Math.max(Math.abs(a[0] - b[0]), Math.abs(a[1] - b[1]), Math.abs(a[2] - b[2]));
+
+  // 1. Border colour clusters (k-means, k ≤ 4) with their spread, so textures count as ground.
+  const ring = Math.max(2, Math.round(Math.min(w, h) * 0.04));
+  const samples: number[][] = [];
+  const sides: number[] = []; // 0 top, 1 right, 2 bottom, 3 left
+  const step = Math.max(1, Math.floor((2 * ring * (w + h)) / 4000));
+  let k = 0;
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
-      if (frame[y * w + x]) continue;
-      search: for (let dy = -r; dy <= r; dy++)
-        for (let dx = -r; dx <= r; dx++) {
-          const xx = x + dx;
-          const yy = y + dy;
-          if (xx >= 0 && yy >= 0 && xx < w && yy < h && frame[yy * w + xx]) {
-            data.fill(255, at(x, y), at(x, y) + 3);
-            break search;
-          }
+      if (x >= ring && y >= ring && x < w - ring && y < h - ring) continue;
+      if (k++ % step) continue;
+      samples.push(col(y * w + x));
+      const near = [y, w - 1 - x, h - 1 - y, x];
+      sides.push(near.indexOf(Math.min(...near)));
+    }
+  let centres = [0, 0.33, 0.66, 0.99].map((f) => samples[Math.floor(f * (samples.length - 1))]);
+  let groups: number[][][] = [];
+  let owner: number[] = [];
+  for (let it = 0; it < 8; it++) {
+    groups = centres.map(() => []);
+    owner = samples.map((c) => {
+      let best = 0;
+      for (let j = 1; j < centres.length; j++) if (dist(c, centres[j]) < dist(c, centres[best])) best = j;
+      groups[best].push(c);
+      return best;
+    });
+    centres = groups.map((g, j) => (g.length ? [0, 1, 2].map((m) => g.reduce((t, c) => t + c[m], 0) / g.length) : centres[j]));
+  }
+  // A ground colour surrounds the logo: it shows on ≥ 3 sides, or covers most of a
+  // side (screenshot bars). Lettering that merely touches one edge is not ground.
+  const perSide = [0, 1, 2, 3].map((sd) => sides.filter((v) => v === sd).length || 1);
+  const grounds = groups
+    .map((g, j) => {
+      const cover = [0, 1, 2, 3].map((sd) => owner.filter((o, i) => o === j && sides[i] === sd).length / perSide[sd]);
+      return {
+        c: centres[j],
+        n: g.length,
+        spread: g.length ? g.reduce((t, c) => t + dist(c, centres[j]), 0) / g.length : 0,
+        surrounds: cover.filter((f) => f > 0.05).length >= 3 || Math.max(...cover) > 0.6,
+      };
+    })
+    .filter((g) => g.n > samples.length * 0.03 && g.surrounds);
+  const nearGround = (c: number[]) => grounds.some((g) => dist(c, g.c) < Math.max(44, g.spread * 2.4));
+
+  // 2. Ground. bg: 1 = ground (also feeds the local-ground grid), 2 = removed seam only.
+  const bg = new Uint8Array(N);
+  const component = (p0: number, ok: (q: number) => boolean, seen: Uint8Array) => {
+    const members = [p0];
+    seen[p0] = 1;
+    for (let i = 0; i < members.length; i++) {
+      const p = members[i];
+      const x = p % w;
+      for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w])
+        if (q >= 0 && q < N && !seen[q] && ok(q)) {
+          seen[q] = 1;
+          members.push(q);
         }
     }
+    return members;
+  };
+  let disc: number[] = [];
+  if (badge) {
+    // Badge: the largest region of the badge colour is the disc. Everything outside
+    // its convex outline is the frame; inside it, only the disc itself is ground, so
+    // letters that touch the rim or share the frame colour are kept.
+    const isBadge = (q: number) => dist(col(q), badge) <= 48;
+    const seen = new Uint8Array(N);
+    for (let p0 = 0; p0 < N; p0++) {
+      if (seen[p0] || !isBadge(p0)) continue;
+      const m = component(p0, isBadge, seen);
+      if (m.length > disc.length) disc = m;
+    }
+    if (disc.length < N * 0.12) disc = [];
+  }
+  if (disc.length) {
+    // Convex hull (monotone chain) of each row's leftmost/rightmost disc pixel.
+    const minX = new Int32Array(h).fill(w);
+    const maxX = new Int32Array(h).fill(-1);
+    for (const p of disc) {
+      const x = p % w;
+      const y = (p - x) / w;
+      if (x < minX[y]) minX[y] = x;
+      if (x > maxX[y]) maxX[y] = x;
+    }
+    const pts: [number, number][] = [];
+    for (let y = 0; y < h; y++) if (maxX[y] >= 0) pts.push([minX[y], y], [maxX[y], y]);
+    pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o: number[], a: number[], b: number[]) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lower: [number, number][] = [];
+    const upper: [number, number][] = [];
+    for (const pt of pts) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0) lower.pop();
+      lower.push(pt);
+    }
+    for (const pt of [...pts].reverse()) {
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0) upper.pop();
+      upper.push(pt);
+    }
+    const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
+    // Row and column spans of the convex outline → inside test and distance to the rim.
+    const span = (axis: 0 | 1, at: number) => {
+      let lo = Infinity;
+      let hi = -Infinity;
+      for (let i = 0; i < hull.length; i++) {
+        const a = hull[i];
+        const b = hull[(i + 1) % hull.length];
+        const o = 1 - axis;
+        if ((a[o] - at) * (b[o] - at) > 0) continue;
+        const t = b[o] === a[o] ? 0 : (at - a[o]) / (b[o] - a[o]);
+        for (const v of b[o] === a[o] ? [a[axis], b[axis]] : [a[axis] + t * (b[axis] - a[axis])]) {
+          lo = Math.min(lo, v);
+          hi = Math.max(hi, v);
+        }
+      }
+      return [lo, hi];
+    };
+    const rows = Array.from({ length: h }, (_, y) => span(0, y));
+    const cols = Array.from({ length: w }, (_, x) => span(1, x));
+    const seam = Math.max(2, Math.round(Math.min(w, h) / 70));
+    for (let p = 0; p < N; p++) {
+      const x = p % w;
+      const y = (p - x) / w;
+      const d = Math.min(x - rows[y][0], rows[y][1] - x, y - cols[x][0], cols[x][1] - y);
+      if (!(d >= seam)) bg[p] = 2;
+    }
+    for (const p of disc) bg[p] = 1;
+  } else {
+    // Ground = everything connected to the image border through the border's colours.
+    const seen = new Uint8Array(N);
+    const ok = (q: number) => nearGround(col(q));
+    const seeds: number[] = [];
+    for (let x = 0; x < w; x++) seeds.push(x, (h - 1) * w + x);
+    for (let y = 0; y < h; y++) seeds.push(y * w, y * w + w - 1);
+    for (const p0 of seeds) if (!seen[p0] && ok(p0)) for (const p of component(p0, ok, seen)) bg[p] = 1;
+  }
+
+  // 3. Local ground on a coarse grid (from ground pixels), bilinear in between.
+  const cell = Math.max(8, Math.round(Math.max(w, h) / 14));
+  const gw = Math.ceil(w / cell);
+  const gh = Math.ceil(h / cell);
+  const grid: (number[] | null)[] = new Array(gw * gh).fill(null);
+  for (let gy = 0; gy < gh; gy++)
+    for (let gx = 0; gx < gw; gx++) {
+      const sum = [0, 0, 0];
+      let n = 0;
+      for (let y = gy * cell; y < Math.min(h, (gy + 1) * cell); y++)
+        for (let x = gx * cell; x < Math.min(w, (gx + 1) * cell); x++) {
+          if (bg[y * w + x] !== 1) continue; // ground pixels only (the disc, for badges)
+          const c = col(y * w + x);
+          sum[0] += c[0];
+          sum[1] += c[1];
+          sum[2] += c[2];
+          n++;
+        }
+      if (n > 4) grid[gy * gw + gx] = sum.map((v) => v / n);
+    }
+  for (let pass = 0; pass < gw + gh && grid.some((c) => !c); pass++) {
+    const prev = grid.slice();
+    for (let i = 0; i < grid.length; i++) {
+      if (prev[i]) continue;
+      const gx = i % gw;
+      const gy = (i - gx) / gw;
+      const near = [[1, 0], [-1, 0], [0, 1], [0, -1]]
+        .map(([dx, dy]) => (gx + dx >= 0 && gx + dx < gw && gy + dy >= 0 && gy + dy < gh ? prev[(gy + dy) * gw + gx + dx] : null))
+        .filter((c): c is number[] => !!c);
+      if (near.length) grid[i] = [0, 1, 2].map((j) => near.reduce((t, c) => t + c[j], 0) / near.length);
+    }
+  }
+  const fallback = grounds[0]?.c ?? [255, 255, 255];
+  const groundAt = (x: number, y: number) => {
+    const fx = Math.min(gw - 1, Math.max(0, x / cell - 0.5));
+    const fy = Math.min(gh - 1, Math.max(0, y / cell - 0.5));
+    const x0 = Math.floor(fx);
+    const y0 = Math.floor(fy);
+    const x1 = Math.min(gw - 1, x0 + 1);
+    const y1 = Math.min(gh - 1, y0 + 1);
+    const tx = fx - x0;
+    const ty = fy - y0;
+    const g = (gx: number, gy: number) => grid[gy * gw + gx] ?? fallback;
+    return [0, 1, 2].map((j) => (g(x0, y0)[j] * (1 - tx) + g(x1, y0)[j] * tx) * (1 - ty) + (g(x0, y1)[j] * (1 - tx) + g(x1, y1)[j] * tx) * ty);
+  };
+  // Opacity: distance from the local ground over the largest distance a colour can
+  // have from it, above the ground's own noise (texture) — linear, so thin light
+  // lettering keeps its weight. The colour is un-blended from the ground.
+  const spread = disc.length ? 0 : Math.min(40, Math.max(0, ...grounds.map((g) => g.spread)));
+  const noise = 8 + spread * 1.6;
+  const out = Buffer.alloc(N * 4);
+  for (let p = 0; p < N; p++) {
+    if (bg[p]) continue;
+    const x = p % w;
+    const c = col(p);
+    const g = groundAt(x, (p - x) / w);
+    const reach = Math.max(96, ...g.map((v) => Math.max(v, 255 - v)));
+    const a = Math.min(1, Math.max(0, (dist(c, g) - noise) / (reach - noise)) * 1.25);
+    if (a <= 0.02) continue;
+    for (let j = 0; j < 3; j++) out[p * 4 + j] = Math.max(0, Math.min(255, Math.round(g[j] + (c[j] - g[j]) / a)));
+    out[p * 4 + 3] = Math.round(a * 255);
+  }
+
+  // 4. Drop specks and thin lines stuck to the image edge (screenshot leftovers).
+  const label = new Int32Array(N).fill(-1);
+  const thin = Math.max(4, Math.round(Math.min(w, h) * 0.025));
+  for (let p0 = 0; p0 < N; p0++) {
+    if (label[p0] !== -1 || out[p0 * 4 + 3] < 90) continue;
+    const members: number[] = [];
+    const st = [p0];
+    label[p0] = p0;
+    let x0 = w, y0 = h, x1 = 0, y1 = 0;
+    while (st.length) {
+      const p = st.pop()!;
+      members.push(p);
+      const x = p % w;
+      const y = (p - x) / w;
+      x0 = Math.min(x0, x);
+      x1 = Math.max(x1, x);
+      y0 = Math.min(y0, y);
+      y1 = Math.max(y1, y);
+      for (const q of [x > 0 ? p - 1 : -1, x < w - 1 ? p + 1 : -1, p - w, p + w]) {
+        if (q < 0 || q >= N || label[q] !== -1 || out[q * 4 + 3] < 90) continue;
+        label[q] = p0;
+        st.push(q);
+      }
+    }
+    const touchesEdge = x0 <= ring || y0 <= ring || x1 >= w - 1 - ring || y1 >= h - 1 - ring;
+    const isThin = Math.min(x1 - x0 + 1, y1 - y0 + 1) <= thin && Math.max(x1 - x0 + 1, y1 - y0 + 1) > thin * 4;
+    if (members.length < Math.max(3, N * 0.00006) || (touchesEdge && isThin)) for (const p of members) out[p * 4 + 3] = 0;
+  }
+  return finish(sharp(out, { raw: { width: w, height: h, channels: 4 } }));
 }
+
+/** The cut-out logo in one colour (its exact shape): white for dark pages, ink for light ones. */
+export async function logoInColour(cutout: Buffer, hex: string): Promise<Buffer> {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  const { data, info } = await sharp(cutout).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+  }
+  return sharp(data, { raw: info }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
+}
+
+/** Contrast of a cut-out logo's own colours against a page colour (opacity-weighted). */
+export async function logoContrast(cutout: Buffer, pageHex: string): Promise<number> {
+  const { data } = await sharp(cutout).ensureAlpha().resize(160, 160, { fit: "inside" }).raw().toBuffer({ resolveWithObject: true });
+  const lin = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const L = (r: number, g: number, b: number) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  let sum = 0;
+  let wsum = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3] / 255;
+    if (a < 0.5) continue;
+    sum += L(data[i], data[i + 1], data[i + 2]) * a;
+    wsum += a;
+  }
+  if (!wsum) return 1;
+  const page = L(...([1, 3, 5].map((i) => parseInt(pageHex.slice(i, i + 2), 16)) as [number, number, number]));
+  const [x, y] = [sum / wsum, page].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+
 
 /* ------------------------------------------------------------------ */
 /* Gallery: the owner's photos, re-shot in our editorial look.         */
@@ -402,22 +646,3 @@ export function fallbackCopy(input: CopyInput): SiteCopy {
   };
 }
 
-/**
- * Logo on a dark ground (e.g. blue letters on navy) → the same colour logo on
- * transparency: pixels close to the ground colour fade out. No AI involved.
- */
-export async function logoOnDark(logo: Buffer): Promise<Buffer> {
-  const { data, info } = await sharp(logo).flatten({ background: "#000000" }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const at = (x: number, y: number) => {
-    const i = (y * info.width + x) * 4;
-    return [data[i], data[i + 1], data[i + 2]];
-  };
-  const cs = [at(2, 2), at(info.width - 3, 2), at(2, info.height - 3), at(info.width - 3, info.height - 3)];
-  const g = [0, 1, 2].map((k) => cs.reduce((n, c) => n + c[k], 0) / cs.length);
-  for (let i = 0; i < data.length; i += 4) {
-    const d = Math.max(Math.abs(data[i] - g[0]), Math.abs(data[i + 1] - g[1]), Math.abs(data[i + 2] - g[2])) / 255;
-    const t = Math.min(1, Math.max(0, (d - 0.12) / 0.33));
-    data[i + 3] = Math.round(t * t * (3 - 2 * t) * 255);
-  }
-  return sharp(data, { raw: info }).trim({ threshold: 1 }).resize({ height: 400, withoutEnlargement: true }).webp({ quality: 95, alphaQuality: 100 }).toBuffer();
-}

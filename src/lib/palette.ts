@@ -20,6 +20,10 @@ export type BrandPalette = {
   lightGround: boolean;
   /** The logo is a badge on a different-coloured square: cut that frame away. */
   framed: boolean;
+  /** The colour the logo is drawn on (the badge colour for badge logos). */
+  ground: RGB;
+  /** Brand colours from the logo (or the studio photos), most dominant first. */
+  brand: RGB[];
 };
 
 const hex = ([r, g, b]: RGB) => `#${[r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
@@ -161,6 +165,35 @@ function forDarkPage(c: RGB, bg: RGB): RGB {
  *  - logo on a light ground → light page in the logo's colours
  *  - logo on a dark ground → dark page tinted with that ground (navy, plum…) and the logo colour as accent
  */
+/** Page ground the owner picked in the form ("Sitenin zemini"); "auto" = the logo's own ground. */
+export type GroundChoice = "auto" | "beyaz" | "krem" | "siyah";
+export const isGroundChoice = (v: unknown): v is GroundChoice => v === "auto" || v === "beyaz" || v === "krem" || v === "siyah";
+
+/** Theme on the ground the owner picked, still in the logo's colours. */
+export function themeForGround(p: BrandPalette, ground: Exclude<GroundChoice, "auto">): Site["theme"] {
+  if (ground === "siyah") {
+    const bg: RGB = [11, 11, 12];
+    const accentBase = [...p.brand].sort((x, y) => toHsl(y).s - toHsl(x).s)[0];
+    const accent = accentBase ? forDarkPage(accentBase, bg) : null;
+    const ink = accent ? mix([247, 248, 250], accent, 0.03) : ([250, 250, 250] as RGB);
+    return { bg: hex(bg), surface: hex([22, 22, 24]), ink: hex(ink), muted: hex(mix(ink, bg, 0.38)), line: hex(mix(ink, bg, 0.74)), accent: accent ? hex(accent) : "", mode: "dark", photos: "color" };
+  }
+  const bg: RGB = ground === "beyaz" ? [255, 255, 255] : [247, 242, 234];
+  const main = p.brand[0];
+  const ink: RGB = main ? fromHsl(toHsl(main).h, Math.min(0.55, toHsl(main).s), 0.17) : [28, 27, 26];
+  const accent = main ? (contrast(main, bg) < 1.8 ? deepen(main, bg) : main) : null;
+  return {
+    bg: hex(bg),
+    surface: hex(ground === "beyaz" ? (main ? mix(bg, main, 0.03) : [250, 250, 250]) : mix(bg, [255, 255, 255], 0.5)),
+    ink: hex(ink),
+    muted: hex(mix(ink, bg, 0.42)),
+    line: hex(mix(ink, bg, 0.86)),
+    accent: accent ? hex(accent) : "",
+    mode: "light",
+    photos: "color",
+  };
+}
+
 export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promise<BrandPalette> {
   const { data, info } = await sharp(logo)
     .flatten({ background: "#ffffff" })
@@ -216,6 +249,8 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
       return {
         lightGround,
       framed,
+      ground,
+      brand,
         names: ["black", "white"],
         theme: { bg: "#faf8f5", surface: "#ffffff", ink: "#1c1b1a", muted: "#77736e", line: "#e3dfd9", accent: "", mode: "light", photos: "color" },
       };
@@ -229,6 +264,8 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
     return {
       lightGround,
       framed,
+      ground,
+      brand,
       names,
       theme: {
         bg: hex(bg),
@@ -257,6 +294,8 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
   return {
     lightGround,
     framed,
+    ground,
+    brand,
     names: names.length ? names : ["black", "white"],
     theme: {
       bg: hex(bg),

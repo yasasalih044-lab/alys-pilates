@@ -736,3 +736,10 @@ body::after {
 }
 .site-light .tm-card { background: color-mix(in srgb, var(--surface) 92%, transparent); border-color: color-mix(in srgb, var(--ink) 10%, #fff); }
 .site-light .pi-plan { background: color-mix(in srgb, var(--surface) 70%, transparent); }
+
+/* ---- 2026-10-15 -------------------------------------------------------- */
+/* Header logo sized by its shape: a box, not a fixed height. Wide wordmarks
+   stay as wide as before (~150 px), square/badge logos (B-Core, ALYS) are no
+   longer squeezed to 28 px on dark pages. */
+.brand img, .brand img[data-mode="light"] { width: auto; height: auto; max-height: 56px; max-width: 160px; }
+@media (max-width: 640px) { .brand img, .brand img[data-mode="light"] { max-height: 48px; max-width: 140px; } }
