@@ -119,10 +119,14 @@ export async function generateSite(
  * logo this site already has (it does not depend on the ground): reused
  * instead of asking GPT again.
  */
-export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette, white?: string) {
+export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette, white?: string, fresh = true) {
   const mode = palette.theme.mode ?? "dark";
-  // The logo alone, cut from its ground by code (never redrawn).
-  const cut = await logoCutout(logo, palette.framed ? palette.ground : undefined);
+  // The logo alone, cut from its ground by code (never redrawn). It does not
+  // depend on the page ground, so a later ground change reuses the stored cut.
+  const cutName = palette.framed ? "logo-cut-framed.webp" : "logo-cut.webp";
+  const stored = fresh ? null : await readUpload(slug, cutName);
+  const cut = stored ?? (await logoCutout(logo, palette.framed ? palette.ground : undefined));
+  if (!stored) await saveUpload(slug, cutName, cut);
   // On a light page a logo that is itself light (white lettering) would vanish:
   // use its exact shape in the page's ink instead.
   const onLightImg = (await logoContrast(cut, palette.theme.bg)) < 1.6 && mode === "light" ? await logoInColour(cut, palette.theme.ink) : cut;
@@ -163,7 +167,7 @@ export async function siteOnGround(slug: string, site: StoredSite, ground: Groun
   const files = await filesFromStore(slug, site);
   const palette = await paletteFromLogo(files.logo, files.rooms);
   if (ground !== "auto") palette.theme = themeForGround(palette, ground);
-  const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site));
+  const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site), !!opts.freshWhite);
   const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
   const logoWhite = logos.white ?? knownWhite(site);
   return {
