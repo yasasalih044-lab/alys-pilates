@@ -20,6 +20,8 @@ export type SiteMeta = {
   /** Preview built by Site Yapıcı (shows the "bu siteyi istiyorum" bar). */
   preview: boolean;
   owner?: { studio: string; whatsapp: string; ip?: string };
+  /** Full-white logo made for dark grounds, kept so a later ground change can reuse it. */
+  logoWhite?: string;
 };
 
 export type StoredSite = Site & { _meta?: SiteMeta };

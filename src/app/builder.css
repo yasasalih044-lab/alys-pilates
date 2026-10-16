@@ -240,3 +240,18 @@ body { margin: 0; }
 .sy-ground span { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; }
 .sy-ground small { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.55); }
 .sy-ground i { box-shadow: 0 0 0 2px rgba(255,255,255,0.35); }
+
+/* Ground: "Logodan otomatik" and the colour picker side by side, the three presets below. */
+.sy-grounds { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+.sy-grounds .sy-ground { grid-column: span 3; }
+.sy-grounds .sy-ground-preset { grid-column: span 2; }
+.sy-custom { position: relative; }
+.sy-custom input { width: 26px; height: 26px; box-shadow: 0 0 0 2px rgba(255,255,255,0.35), 0 0 16px var(--sw); }
+.sy-custom input::-moz-color-swatch { border: 0; border-radius: 50%; }
+.sy-edit-note { margin-top: -6px; }
+.sy-edit-note strong { color: #fff; }
+@media (max-width: 560px) {
+  .sy-grounds { gap: 10px; }
+  .sy-grounds .sy-swatch { padding: 12px; gap: 10px; font-size: 14px; }
+  .sy-ground-preset { justify-content: center; }
+}

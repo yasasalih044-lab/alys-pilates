@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import SitePage from "@/components/site/site-page";
 import { PreviewBar } from "@/components/site/preview-bar";
 import { getSite } from "@/lib/store";
-import { isSiteStyle } from "@/lib/styles";
+import { DEFAULT_STYLE, isSiteStyle } from "@/lib/styles";
 
 export const dynamic = "force-dynamic";
 
@@ -35,5 +35,6 @@ export default async function Page({ params, searchParams }: Props) {
   const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   const url = `${proto}://${host}/s/${slug}`;
 
-  return <SitePage s={s}>{s._meta?.preview ? <PreviewBar url={url} studio={s.brand.name} /> : null}</SitePage>;
+  const edit = { slug, style: stored.style ?? DEFAULT_STYLE, ground: stored._meta?.input?.ground ?? "auto" };
+  return <SitePage s={s}>{s._meta?.preview ? <PreviewBar url={url} studio={s.brand.name} edit={edit} /> : null}</SitePage>;
 }

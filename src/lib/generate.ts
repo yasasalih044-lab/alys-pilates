@@ -14,7 +14,7 @@ import {
   whiteLogo,
 } from "@/lib/ai";
 import { buildSite, type BuilderInput } from "@/lib/build-site";
-import { colorName, paletteFromLogo, themeForGround, type BrandPalette } from "@/lib/palette";
+import { colorName, paletteFromLogo, themeForGround, type BrandPalette, type GroundChoice } from "@/lib/palette";
 import { pricingServices, type Site } from "@/lib/site";
 import { makeSlug, readUpload, saveSite, saveUpload, type StoredSite } from "@/lib/store";
 
@@ -105,6 +105,7 @@ export async function generateSite(
       preview: true,
       owner: { studio: input.studio, whatsapp: input.whatsapp, ip: opts.ip },
       input,
+      ...(logos.white ? { logoWhite: logos.white } : {}),
     },
   };
   await saveSite(slug, stored);
@@ -114,9 +115,11 @@ export async function generateSite(
 
 /**
  * The logo files for a site: the cut-out logo (exact, never redrawn) for light
- * pages, a full-white one for dark pages, and the tab icon.
+ * pages, a full-white one for dark pages, and the tab icon. `white` = a white
+ * logo this site already has (it does not depend on the ground): reused
+ * instead of asking GPT again.
  */
-export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette) {
+export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette, white?: string) {
   const mode = palette.theme.mode ?? "dark";
   // The logo alone, cut from its ground by code (never redrawn).
   const cut = await logoCutout(logo, palette.framed ? palette.ground : undefined);
@@ -134,16 +137,41 @@ export async function brandLogos(slug: string, v: string, logo: Buffer, palette:
       .png()
       .toBuffer(),
   );
-  if (mode === "light") return { logo: onLight, onLight, icon };
+  if (mode === "light") return { logo: onLight, onLight, icon, white };
+  if (white) return { logo: white, onLight, icon, white };
   // Dark page: full-white logo from GPT; if it comes back as a box, the exact
   // white silhouette of the cut-out logo instead.
-  const white = await whiteLogo(logo, "image/png")
+  const made = await whiteLogo(logo, "image/png")
     .then((w) => saveUpload(slug, `logo-white-${v}.webp`, w))
     .catch(async (e) => {
       console.error("white logo refused, using the cut-out logo in white", (e as Error).message);
       return saveUpload(slug, `logo-white-${v}.webp`, await logoInColour(cut, "#ffffff"));
     });
-  return { logo: white, onLight, icon };
+  return { logo: made, onLight, icon, white: made };
+}
+
+/** The white logo a site already has: remembered in _meta, or the logo of a dark site. */
+const knownWhite = (s: StoredSite) => s._meta?.logoWhite ?? (s.theme.mode === "dark" && s.brand.logo.includes("/logo-white-") ? s.brand.logo : undefined);
+
+/**
+ * The same site on another page ground (form's "Sitenin zemini", or the
+ * preview's "Düzenle" later): new colours and logo files, same link, photos
+ * and texts untouched. `freshWhite` redraws the white logo too (admin relogo).
+ */
+export async function siteOnGround(slug: string, site: StoredSite, ground: GroundChoice, opts: { freshWhite?: boolean } = {}): Promise<StoredSite> {
+  const input = { ...inputFromSite(site), ground };
+  const files = await filesFromStore(slug, site);
+  const palette = await paletteFromLogo(files.logo, files.rooms);
+  if (ground !== "auto") palette.theme = themeForGround(palette, ground);
+  const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site));
+  const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
+  const logoWhite = logos.white ?? knownWhite(site);
+  return {
+    ...site,
+    theme: { ...palette.theme, accent },
+    brand: { ...site.brand, logo: logos.logo, mark: logos.onLight, originalLogo: logos.onLight, logoOnLight: logos.onLight, icon: logos.icon },
+    _meta: { ...(site._meta ?? { createdAt: new Date().toISOString(), preview: false }), updatedAt: new Date().toISOString(), input, ...(logoWhite ? { logoWhite } : {}) },
+  };
 }
 
 /** Rebuilds the form input of an older site that predates `_meta.input`. */

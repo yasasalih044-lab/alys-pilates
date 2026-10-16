@@ -1,7 +1,7 @@
 import { normalizeWhatsapp, type BuilderInput } from "@/lib/build-site";
 import { generateSite } from "@/lib/generate";
 import { DEFAULT_STYLE, isSiteStyle } from "@/lib/styles";
-import { isGroundChoice } from "@/lib/palette";
+import { toGround } from "@/lib/palette";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -45,7 +45,7 @@ function parseInput(raw: unknown): BuilderInput {
     instagram: str(p.instagram, 40).replace(/^@/, "").replace(/[^a-zA-Z0-9._]/g, ""),
     accent: accent === "auto" || /^#[0-9a-f]{6}$/i.test(accent) ? accent : accent === "" ? "" : "auto",
     style: isSiteStyle(p.style) ? p.style : DEFAULT_STYLE,
-    ground: isGroundChoice(p.ground) ? p.ground : "auto",
+    ground: toGround(p.ground) ?? "auto",
     services: list(p.services)
       .slice(0, 6)
       .map((s) => s as Record<string, unknown>)

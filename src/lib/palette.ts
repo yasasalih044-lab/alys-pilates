@@ -165,34 +165,69 @@ function forDarkPage(c: RGB, bg: RGB): RGB {
  *  - logo on a light ground → light page in the logo's colours
  *  - logo on a dark ground → dark page tinted with that ground (navy, plum…) and the logo colour as accent
  */
-/** Page ground the owner picked in the form ("Sitenin zemini"); "auto" = the logo's own ground. */
-export type GroundChoice = "auto" | "beyaz" | "krem" | "siyah";
-export const isGroundChoice = (v: unknown): v is GroundChoice => v === "auto" || v === "beyaz" || v === "krem" || v === "siyah";
+/**
+ * Page ground the owner picked ("Sitenin zemini"), in the form or later from
+ * the preview's "Düzenle": "auto" = the logo's own ground, a preset, or any
+ * colour from the colour picker (#rrggbb).
+ */
+export type GroundChoice = "auto" | "beyaz" | "krem" | "siyah" | `#${string}`;
+const GROUND_PRESETS: Record<string, RGB> = { beyaz: [255, 255, 255], krem: [247, 242, 234], siyah: [11, 11, 12] };
+export const isGroundChoice = (v: unknown): v is GroundChoice =>
+  v === "auto" || (typeof v === "string" && (Object.hasOwn(GROUND_PRESETS, v) || /^#[0-9a-f]{6}$/.test(v)));
+/** Request value → ground choice (colour pickers may send upper case), or null. */
+export const toGround = (v: unknown): GroundChoice | null => {
+  const g = typeof v === "string" ? v.trim().toLowerCase() : v;
+  return isGroundChoice(g) ? g : null;
+};
+
+/** Mix `ink` into `bg` as far as `t`, but keep at least `min` contrast (greys on a coloured ground). */
+function readable(ink: RGB, bg: RGB, t: number, min: number) {
+  let out = mix(ink, bg, t);
+  while (contrast(out, bg) < min && t > 0.08) out = mix(ink, bg, (t -= 0.04));
+  return out;
+}
 
 /** Theme on the ground the owner picked, still in the logo's colours. */
 export function themeForGround(p: BrandPalette, ground: Exclude<GroundChoice, "auto">): Site["theme"] {
-  if (ground === "siyah") {
-    const bg: RGB = [11, 11, 12];
+  const bg: RGB = GROUND_PRESETS[ground] ?? rgbOf(ground);
+  // Dark or light page: whichever text colour reads better on this ground.
+  if (contrast(bg, [255, 255, 255]) > contrast(bg, [20, 20, 20])) {
     const accentBase = [...p.brand].sort((x, y) => toHsl(y).s - toHsl(x).s)[0];
     const accent = accentBase ? forDarkPage(accentBase, bg) : null;
     const ink = accent ? mix([247, 248, 250], accent, 0.03) : ([250, 250, 250] as RGB);
-    return { bg: hex(bg), surface: hex([22, 22, 24]), ink: hex(ink), muted: hex(mix(ink, bg, 0.38)), line: hex(mix(ink, bg, 0.74)), accent: accent ? hex(accent) : "", mode: "dark", photos: "color" };
+    return {
+      bg: hex(bg),
+      surface: hex(mix(bg, [255, 255, 255], 0.05)),
+      ink: hex(ink),
+      muted: hex(readable(ink, bg, 0.38, 3.2)),
+      line: hex(mix(ink, bg, 0.74)),
+      accent: accent ? hex(accent) : "",
+      mode: "dark",
+      photos: "color",
+    };
   }
-  const bg: RGB = ground === "beyaz" ? [255, 255, 255] : [247, 242, 234];
   const main = p.brand[0];
-  const ink: RGB = main ? fromHsl(toHsl(main).h, Math.min(0.55, toHsl(main).s), 0.17) : [28, 27, 26];
+  const hue = main ? toHsl(main) : null;
+  let ink: RGB = hue ? fromHsl(hue.h, Math.min(0.55, hue.s), 0.17) : [28, 27, 26];
+  // A coloured ground (sage, blush, sky…) needs the text darker still to read.
+  for (let l = 0.15; hue && contrast(ink, bg) < 7 && l > 0.05; l -= 0.02) ink = fromHsl(hue.h, Math.min(0.55, hue.s), l);
   const accent = main ? (contrast(main, bg) < 1.8 ? deepen(main, bg) : main) : null;
   return {
     bg: hex(bg),
-    surface: hex(ground === "beyaz" ? (main ? mix(bg, main, 0.03) : [250, 250, 250]) : mix(bg, [255, 255, 255], 0.5)),
+    surface: hex(luminance(bg) > 0.9 ? (main ? mix(bg, main, 0.03) : [250, 250, 250]) : mix(bg, [255, 255, 255], 0.5)),
     ink: hex(ink),
-    muted: hex(mix(ink, bg, 0.42)),
+    muted: hex(readable(ink, bg, 0.42, 3.5)),
     line: hex(mix(ink, bg, 0.86)),
     accent: accent ? hex(accent) : "",
     mode: "light",
     photos: "color",
   };
 }
+
+const rgbOf = (h: string): RGB => {
+  const n = parseInt(h.slice(1, 7), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
 
 export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promise<BrandPalette> {
   const { data, info } = await sharp(logo)
@@ -242,6 +277,14 @@ export async function paletteFromLogo(logo: Buffer, rooms: Buffer[] = []): Promi
   }
   const brand = logoColours.length ? logoColours : roomColours;
   const names = [...new Set(brand.map(colorName))];
+
+  // An opaque logo with colour around it is drawn on that ground: the page is
+  // that colour exactly ("logonun zemini = sitenin zemini") — white, navy, or a
+  // mid tone like an orange; the text goes dark or light, whichever reads.
+  if (!transparent && (brand[0] || !lightGround)) {
+    const theme = themeForGround({ brand } as BrandPalette, hex(ground) as `#${string}`);
+    return { lightGround: theme.mode === "light", framed, ground, brand, names: names.length ? names : ["black", "white"], theme };
+  }
 
   if (lightGround) {
     const main = brand[0];

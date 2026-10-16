@@ -1,18 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { GROUND_OPTIONS, PICKER_START, isHexColour } from "@/lib/grounds";
 import { DEFAULT_STYLE, SITE_STYLES, type SiteStyle } from "@/lib/styles";
 
 const RD_WHATSAPP = "905454498280";
 
 const SERVICE_SUGGESTIONS = ["Reformer grup", "Özel ders", "Düet", "Mat pilates", "Fonksiyonel antrenman", "Hamile pilatesi"];
-const GROUNDS = [
-  { value: "auto", label: "Logodan otomatik", note: "Logonun kendi zemini" },
-  { value: "beyaz", label: "Beyaz", note: "Ferah, açık", sw: "#ffffff" },
-  { value: "krem", label: "Krem", note: "Sıcak, yumuşak", sw: "#f7f2ea" },
-  { value: "siyah", label: "Siyah", note: "Koyu, şık", sw: "#0b0b0c" },
-] as const;
-type Ground = (typeof GROUNDS)[number]["value"];
 
 const SWATCHES = [
   { label: "Pembe", value: "#d6249f" },
@@ -57,7 +51,9 @@ export function Builder() {
   const [reviews, setReviews] = useState<Review[]>([{ name: "", text: "" }]);
   const [style, setStyle] = useState<SiteStyle>(DEFAULT_STYLE);
   const [accent, setAccent] = useState<string>("auto");
-  const [ground, setGround] = useState<Ground>("auto");
+  // "auto", a preset (beyaz/krem/siyah) or a colour from the picker (#rrggbb).
+  const [ground, setGround] = useState<string>("auto");
+  const [pickerColour, setPickerColour] = useState(PICKER_START);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ slug: string; url: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
@@ -465,22 +461,48 @@ export function Builder() {
           {step === "color" && (
             <Question title="Renkler" sub="Varsayılan: logondaki renklerden otomatik. İstersen sitenin zeminini ve buton rengini kendin seç.">
               <p className="sy-label sy-group-label">Sitenin zemini</p>
-              <div className="sy-swatches sy-grounds" role="radiogroup" aria-label="Sitenin zemini">
-                {GROUNDS.map((g) => (
+              <div className="sy-grounds" role="radiogroup" aria-label="Sitenin zemini">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={ground === "auto"}
+                  className={`sy-swatch sy-ground sy-auto${ground === "auto" ? " sel" : ""}`}
+                  onClick={() => setGround("auto")}
+                >
+                  <i aria-hidden />
+                  <span>
+                    Logodan otomatik
+                    <small>Logonun kendi zemini</small>
+                  </span>
+                </button>
+                <label className={`sy-swatch sy-ground sy-custom${isHexColour(ground) ? " sel" : ""}`} style={{ "--sw": pickerColour } as React.CSSProperties}>
+                  <input
+                    type="color"
+                    value={pickerColour}
+                    aria-label="Zemin rengini kendin seç"
+                    onClick={() => setGround(pickerColour)}
+                    onChange={(e) => {
+                      setPickerColour(e.target.value);
+                      setGround(e.target.value);
+                    }}
+                  />
+                  <span>
+                    Renk seç
+                    <small>{isHexColour(ground) ? ground.toUpperCase() : "İstediğin renk"}</small>
+                  </span>
+                </label>
+                {GROUND_OPTIONS.map((g) => (
                   <button
                     key={g.value}
                     type="button"
                     role="radio"
                     aria-checked={ground === g.value}
-                    className={`sy-swatch sy-ground${"sw" in g ? "" : " sy-auto"}${ground === g.value ? " sel" : ""}`}
-                    style={"sw" in g ? ({ "--sw": g.sw } as React.CSSProperties) : undefined}
+                    className={`sy-swatch sy-ground sy-ground-preset${ground === g.value ? " sel" : ""}`}
+                    style={{ "--sw": g.sw } as React.CSSProperties}
                     onClick={() => setGround(g.value)}
                   >
                     <i aria-hidden />
-                    <span>
-                      {g.label}
-                      <small>{g.note}</small>
-                    </span>
+                    {g.label}
                   </button>
                 ))}
               </div>
@@ -524,6 +546,7 @@ export function Builder() {
                 <span className="sy-hl">{studio}</span> sitesi hazır.
               </h1>
               <p className="sy-sub">Siteni aç, gez. Beğenirsen tek mesajla yayına alalım. İlk 1 ay ücretsiz.</p>
+              <p className="sy-note sy-edit-note">Zemin rengini ve tarzı sonra da değiştirebilirsin: sitenin altındaki <strong>Düzenle</strong> düğmesine bas.</p>
               <section className="sy-pick" aria-labelledby="sy-pick-title">
                 <h2 id="sy-pick-title" className="sy-pick-title">Tarzını seç</h2>
                 <p className="sy-pick-sub">Aynı siteyi dört tarzda aç, beğendiğini seç. İçerik ve renkler aynı kalır.</p>
