@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { siteOnGround } from "@/lib/generate";
+import { siteOnGround, whiteLogoLater } from "@/lib/generate";
 import { toGround } from "@/lib/palette";
 import { getStoredSite, saveSite } from "@/lib/store";
 import { isSiteStyle } from "@/lib/styles";
@@ -60,20 +60,25 @@ export async function POST(req: Request) {
   if (busy.has(slug)) return fail(409, "Önceki değişiklik hâlâ kaydediliyor, birkaç saniye bekle.");
   busy.add(slug);
   let next;
+  let later = false;
   try {
     const site = await getStoredSite(slug);
     if (!site || site._meta?.preview !== true) return fail(404, "Önizleme bulunamadı.");
-    next = ground !== undefined ? await siteOnGround(slug, site, ground) : site;
+    next = ground !== undefined ? await siteOnGround(slug, site, ground, { quick: true }) : site;
     if (isSiteStyle(style)) {
       const meta = next._meta!;
       next = { ...next, style, _meta: { ...meta, ...(meta.input ? { input: { ...meta.input, style } } : {}) } };
     }
-    await saveSite(slug, { ...next, _meta: { ...next._meta!, updatedAt: new Date().toISOString() } });
+    const { _later, ...save } = next as typeof next & { _later?: boolean };
+    await saveSite(slug, { ...save, _meta: { ...save._meta!, updatedAt: new Date().toISOString() } });
+    later = !!_later;
   } catch (e) {
     console.error(`edit failed for ${slug}`, e);
     return fail(500, "Kaydedilemedi, lütfen tekrar dene.");
   } finally {
     busy.delete(slug);
   }
+  // First dark ground on this site: GPT's full-white logo follows in the background.
+  if (later) void whiteLogoLater(slug, busy).catch((e) => console.error("white logo later failed", e));
   return NextResponse.json({ ok: true, style: next.style, ground: next._meta?.input?.ground ?? "auto", url: `/s/${slug}` });
 }

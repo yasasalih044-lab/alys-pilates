@@ -16,7 +16,7 @@ import {
 import { buildSite, type BuilderInput } from "@/lib/build-site";
 import { colorName, paletteFromLogo, themeForGround, type BrandPalette, type GroundChoice } from "@/lib/palette";
 import { pricingServices, type Site } from "@/lib/site";
-import { makeSlug, readUpload, saveSite, saveUpload, type StoredSite } from "@/lib/store";
+import { getStoredSite, makeSlug, readUpload, saveSite, saveUpload, type StoredSite } from "@/lib/store";
 
 export type GenerateFiles = { logo: Buffer; rooms: Buffer[]; trainers: (Buffer | null)[] };
 
@@ -119,7 +119,7 @@ export async function generateSite(
  * logo this site already has (it does not depend on the ground): reused
  * instead of asking GPT again.
  */
-export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette, white?: string, fresh = true) {
+export async function brandLogos(slug: string, v: string, logo: Buffer, palette: BrandPalette, white?: string, fresh = true, quick = false) {
   const mode = palette.theme.mode ?? "dark";
   // The logo alone, cut from its ground by code (never redrawn). It does not
   // depend on the page ground, so a later ground change reuses the stored cut.
@@ -143,6 +143,8 @@ export async function brandLogos(slug: string, v: string, logo: Buffer, palette:
   );
   if (mode === "light") return { logo: onLight, onLight, icon, white };
   if (white) return { logo: white, onLight, icon, white };
+  // An edit waits for nobody: the exact white silhouette now, GPT's white logo later (whiteLogoLater).
+  if (quick) return { logo: await saveUpload(slug, `logo-white-${v}.webp`, await logoInColour(cut, "#ffffff")), onLight, icon, white: undefined, later: true };
   // Dark page: full-white logo from GPT; if it comes back as a box, the exact
   // white silhouette of the cut-out logo instead.
   const made = await whiteLogo(logo, "image/png")
@@ -162,12 +164,12 @@ const knownWhite = (s: StoredSite) => s._meta?.logoWhite ?? (s.theme.mode === "d
  * preview's "Düzenle" later): new colours and logo files, same link, photos
  * and texts untouched. `freshWhite` redraws the white logo too (admin relogo).
  */
-export async function siteOnGround(slug: string, site: StoredSite, ground: GroundChoice, opts: { freshWhite?: boolean } = {}): Promise<StoredSite> {
+export async function siteOnGround(slug: string, site: StoredSite, ground: GroundChoice, opts: { freshWhite?: boolean; quick?: boolean } = {}): Promise<StoredSite & { _later?: boolean }> {
   const input = { ...inputFromSite(site), ground };
   const files = await filesFromStore(slug, site);
   const palette = await paletteFromLogo(files.logo, files.rooms);
   if (ground !== "auto") palette.theme = themeForGround(palette, ground);
-  const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site), !!opts.freshWhite);
+  const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site), !!opts.freshWhite, !!opts.quick);
   const accent = input.accent === "auto" ? palette.theme.accent : input.accent;
   const logoWhite = logos.white ?? knownWhite(site);
   return {
@@ -175,7 +177,34 @@ export async function siteOnGround(slug: string, site: StoredSite, ground: Groun
     theme: { ...palette.theme, accent },
     brand: { ...site.brand, logo: logos.logo, mark: logos.onLight, originalLogo: logos.onLight, logoOnLight: logos.onLight, icon: logos.icon },
     _meta: { ...(site._meta ?? { createdAt: new Date().toISOString(), preview: false }), updatedAt: new Date().toISOString(), input, ...(logoWhite ? { logoWhite } : {}) },
+    ...("later" in logos ? { _later: true } : {}),
   };
+}
+
+/**
+ * After a quick edit put the code-made white logo on a dark ground: asks GPT
+ * for the real full-white logo and swaps it in if the site is still dark.
+ * `lock` is the edit lock of /api/style, so this never races an edit.
+ */
+export async function whiteLogoLater(slug: string, lock: Set<string>) {
+  const site = await getStoredSite(slug);
+  if (!site) return;
+  const files = await filesFromStore(slug, site);
+  const made = await whiteLogo(files.logo, "image/png")
+    .then((w) => saveUpload(slug, `logo-white-${Date.now().toString(36)}.webp`, w))
+    .catch((e) => console.error("background white logo failed", (e as Error).message));
+  if (!made) return;
+  for (let i = 0; i < 60 && lock.has(slug); i++) await new Promise((r) => setTimeout(r, 500));
+  if (lock.has(slug)) return;
+  lock.add(slug);
+  try {
+    const now = await getStoredSite(slug);
+    if (!now?._meta) return;
+    const dark = now.theme.mode === "dark";
+    await saveSite(slug, { ...now, brand: dark ? { ...now.brand, logo: made } : now.brand, _meta: { ...now._meta, logoWhite: made } });
+  } finally {
+    lock.delete(slug);
+  }
 }
 
 /** Rebuilds the form input of an older site that predates `_meta.input`. */
