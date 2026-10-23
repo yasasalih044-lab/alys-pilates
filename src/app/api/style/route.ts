@@ -7,8 +7,9 @@ import { isSiteStyle } from "@/lib/styles";
 // Edits an existing Site Yapıcı preview after it was built (done step and the
 // preview's "Düzenle"): its style ("Tarz") and/or its page ground ("Zemin").
 // Nothing is regenerated: a style is one JSON field; a ground recomputes the
-// colours and cuts the logo again by code. Only a first dark ground on a site
-// that never had one asks GPT for the white logo (once; it is kept).
+// colours and reuses the stored logo cut-out. A first dark ground on a site
+// that never had one gets a code-made white logo at once and GPT's in the
+// background (whiteLogoLater; kept for later edits).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -54,10 +55,10 @@ export async function POST(req: Request) {
   if (ground === null) return fail(400, "Geçersiz renk.");
   if (style === undefined && ground === undefined) return fail(400, "Değişiklik yok.");
 
-  if (ground !== undefined && rateLimited(`ground:${ip}`, GROUND_LIMIT)) return fail(429, "Çok fazla renk denemesi, birkaç dakika sonra tekrar dene.");
   // One edit per site at a time (read after taking the lock), so a slow ground
   // change and a style picked meanwhile can't overwrite each other.
   if (busy.has(slug)) return fail(409, "Önceki değişiklik hâlâ kaydediliyor, birkaç saniye bekle.");
+  if (ground !== undefined && rateLimited(`ground:${ip}`, GROUND_LIMIT)) return fail(429, "Çok fazla renk denemesi, birkaç dakika sonra tekrar dene.");
   busy.add(slug);
   let next;
   let later = false;

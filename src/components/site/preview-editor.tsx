@@ -29,11 +29,15 @@ export function PreviewEditor({ slug, style, ground }: { slug: string; style: Si
   const busy = useRef(false);
   // What the page will show once every save has landed: repeated picks of the same value are skipped.
   const target = useRef({ style, ground });
+  // What the page shows now (saved); a ref so queued saves never read a stale render.
+  const shown = useRef({ style, ground });
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- portal target exists only after mount
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     if (!open) return;
+    closeRef.current?.focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -49,14 +53,21 @@ export function PreviewEditor({ slug, style, ground }: { slug: string; style: Si
     setMsg("Kaydediliyor…");
     const slow = edit.ground ? setTimeout(() => setMsg("Logon yeni zemine göre hazırlanıyor…"), 3500) : undefined;
     try {
-      const res = await fetch("/api/style", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug, ...edit }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || "Kaydedilemedi, lütfen tekrar dene.");
-      const now = { style: json.style ?? current.style, ground: json.ground ?? current.ground };
+      // 409 = the site is still saving (e.g. the white logo arriving): wait and try again.
+      let res: Response | null = null;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        if (attempt) await new Promise((r) => setTimeout(r, 1500));
+        res = await fetch("/api/style", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug, ...edit }),
+        });
+        if (res.status !== 409) break;
+      }
+      const json = await res!.json().catch(() => ({}));
+      if (!res!.ok) throw new Error(json.error || "Kaydedilemedi, lütfen tekrar dene.");
+      const now = { style: json.style ?? shown.current.style, ground: json.ground ?? shown.current.ground };
+      shown.current = now;
       setCurrent(now);
       setMsg("Kaydedildi.");
       // A "?stil=" comparison link would keep showing the other style: drop it.
@@ -64,7 +75,7 @@ export function PreviewEditor({ slug, style, ground }: { slug: string; style: Si
       router.refresh();
     } catch (e) {
       setMsg((e as Error).message);
-      target.current = { ...current };
+      target.current = { ...shown.current };
     } finally {
       clearTimeout(slow);
       busy.current = false;
@@ -106,7 +117,7 @@ export function PreviewEditor({ slug, style, ground }: { slug: string; style: Si
     <div className="pv-sheet" id="pv-sheet" role="dialog" aria-labelledby="pv-sheet-title" hidden={!open}>
       <div className="pv-sheet-head">
         <h2 id="pv-sheet-title">Siteni düzenle</h2>
-        <button type="button" className="pv-close" aria-label="Kapat" onClick={() => setOpen(false)}>
+        <button ref={closeRef} type="button" className="pv-close" aria-label="Kapat" onClick={() => setOpen(false)}>
           ×
         </button>
       </div>

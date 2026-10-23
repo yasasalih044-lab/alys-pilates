@@ -144,7 +144,7 @@ export async function brandLogos(slug: string, v: string, logo: Buffer, palette:
   if (mode === "light") return { logo: onLight, onLight, icon, white };
   if (white) return { logo: white, onLight, icon, white };
   // An edit waits for nobody: the exact white silhouette now, GPT's white logo later (whiteLogoLater).
-  if (quick) return { logo: await saveUpload(slug, `logo-white-${v}.webp`, await logoInColour(cut, "#ffffff")), onLight, icon, white: undefined, later: true };
+  if (quick) return { logo: await saveUpload(slug, `logo-white-quick-${v}.webp`, await logoInColour(cut, "#ffffff")), onLight, icon, white: undefined, later: true };
   // Dark page: full-white logo from GPT; if it comes back as a box, the exact
   // white silhouette of the cut-out logo instead.
   const made = await whiteLogo(logo, "image/png")
@@ -156,8 +156,12 @@ export async function brandLogos(slug: string, v: string, logo: Buffer, palette:
   return { logo: made, onLight, icon, white: made };
 }
 
-/** The white logo a site already has: remembered in _meta, or the logo of a dark site. */
-const knownWhite = (s: StoredSite) => s._meta?.logoWhite ?? (s.theme.mode === "dark" && s.brand.logo.includes("/logo-white-") ? s.brand.logo : undefined);
+/**
+ * The white logo a site already has: remembered in _meta, or the logo of a dark
+ * site — never the quick code-made stand-in, so a failed GPT try is retried.
+ */
+const knownWhite = (s: StoredSite) =>
+  s._meta?.logoWhite ?? (s.theme.mode === "dark" && s.brand.logo.includes("/logo-white-") && !s.brand.logo.includes("/logo-white-quick-") ? s.brand.logo : undefined);
 
 /**
  * The same site on another page ground (form's "Sitenin zemini", or the
@@ -166,7 +170,7 @@ const knownWhite = (s: StoredSite) => s._meta?.logoWhite ?? (s.theme.mode === "d
  */
 export async function siteOnGround(slug: string, site: StoredSite, ground: GroundChoice, opts: { freshWhite?: boolean; quick?: boolean } = {}): Promise<StoredSite & { _later?: boolean }> {
   const input = { ...inputFromSite(site), ground };
-  const files = await filesFromStore(slug, site);
+  const files = await filesFromStore(slug, site, { trainers: false });
   const palette = await paletteFromLogo(files.logo, files.rooms);
   if (ground !== "auto") palette.theme = themeForGround(palette, ground);
   const logos = await brandLogos(slug, Date.now().toString(36), files.logo, palette, opts.freshWhite ? undefined : knownWhite(site), !!opts.freshWhite, !!opts.quick);
@@ -187,14 +191,13 @@ export async function siteOnGround(slug: string, site: StoredSite, ground: Groun
  * `lock` is the edit lock of /api/style, so this never races an edit.
  */
 export async function whiteLogoLater(slug: string, lock: Set<string>) {
-  const site = await getStoredSite(slug);
-  if (!site) return;
-  const files = await filesFromStore(slug, site);
-  const made = await whiteLogo(files.logo, "image/png")
+  const logo = await storedLogo(slug);
+  if (!logo) return;
+  const made = await whiteLogo(logo, "image/png")
     .then((w) => saveUpload(slug, `logo-white-${Date.now().toString(36)}.webp`, w))
     .catch((e) => console.error("background white logo failed", (e as Error).message));
   if (!made) return;
-  for (let i = 0; i < 60 && lock.has(slug); i++) await new Promise((r) => setTimeout(r, 500));
+  for (let i = 0; i < 240 && lock.has(slug); i++) await new Promise((r) => setTimeout(r, 500));
   if (lock.has(slug)) return;
   lock.add(slug);
   try {
@@ -227,22 +230,28 @@ export function inputFromSite(s: StoredSite): BuilderInput {
   };
 }
 
+const firstUpload = async (slug: string, ...names: string[]): Promise<Buffer | null> => {
+  for (const n of names) {
+    const b = await readUpload(slug, n);
+    if (b) return b;
+  }
+  return null;
+};
+
+/** The owner's original logo (newest file name first). */
+const storedLogo = (slug: string) => firstUpload(slug, "logo-src.png", "logo-original.png", "logo-colour.webp");
+
 /** Reads back what a site was built from (newer names first, then the first-version names). */
-export async function filesFromStore(slug: string, s: StoredSite): Promise<GenerateFiles> {
-  const first = async (...names: string[]): Promise<Buffer | null> => {
-    for (const n of names) {
-      const b = await readUpload(slug, n);
-      if (b) return b;
-    }
-    return null;
-  };
-  const logo = await first("logo-src.png", "logo-original.png", "logo-colour.webp");
+export async function filesFromStore(slug: string, s: StoredSite, opts: { trainers?: boolean } = {}): Promise<GenerateFiles> {
+  const first = (...names: string[]) => firstUpload(slug, ...names);
+  const logo = await storedLogo(slug);
   if (!logo) throw new Error(`no logo stored for ${slug}`);
   const rooms: Buffer[] = [];
   for (const i of [0, 1, 2]) {
     const b = await first(`room-${i}.jpg`);
     if (b) rooms.push(b);
   }
-  const trainers = await Promise.all((s.trainers?.items ?? []).map((_, i) => first(`trainer-src-${i}.jpg`, `trainer-${i}.webp`)));
+  // Colour edits need only the logo and rooms; the trainer photos are for regeneration.
+  const trainers = opts.trainers === false ? [] : await Promise.all((s.trainers?.items ?? []).map((_, i) => first(`trainer-src-${i}.jpg`, `trainer-${i}.webp`)));
   return { logo, rooms, trainers };
 }
