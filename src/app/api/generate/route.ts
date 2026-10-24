@@ -2,6 +2,7 @@ import { normalizeWhatsapp, type BuilderInput } from "@/lib/build-site";
 import { generateSite } from "@/lib/generate";
 import { DEFAULT_STYLE, isSiteStyle } from "@/lib/styles";
 import { toGround } from "@/lib/palette";
+import { memberFail, verifyMember } from "@/lib/member";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,6 +87,8 @@ export async function POST(req: Request) {
     return Response.json({ error: "Form okunamadı." }, { status: 400 });
   }
   if (str(form.get("website"))) return Response.json({ error: "Geçersiz istek." }, { status: 400 }); // honeypot
+  const member = await verifyMember(form.get("m"));
+  if (!member.ok) return memberFail(member.code);
 
   let logo: File | null;
   let rooms: File[];
@@ -109,7 +112,7 @@ export async function POST(req: Request) {
         rooms: await Promise.all(rooms.map(bytes)),
         trainers: await Promise.all(trainerFiles.map((f) => (f ? bytes(f) : null))),
       },
-      { ip },
+      { ip, leadId: member.leadId },
     );
     return Response.json({ slug, url: `/s/${slug}` });
   } catch (e) {

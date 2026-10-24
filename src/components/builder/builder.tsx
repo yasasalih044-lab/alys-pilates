@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GROUND_OPTIONS, PICKER_START, isHexColour } from "@/lib/grounds";
 import { DEFAULT_STYLE, SITE_STYLES, type SiteStyle } from "@/lib/styles";
+import { memberToken, signInAgain, waitingAd } from "@/lib/fm-kit";
 
 const RD_WHATSAPP = "905454498280";
 
@@ -62,6 +63,9 @@ export function Builder() {
   const [saving, setSaving] = useState<SiteStyle | null>(null);
   const [styleMsg, setStyleMsg] = useState("");
   const honeypot = useRef<HTMLInputElement>(null);
+  // Waiting ad while the site builds: the result opens only after it ends.
+  const adBox = useRef<HTMLDivElement>(null);
+  const adWait = useRef<Promise<void>>(Promise.resolve());
 
   // Dev-only test hook: /?test-done=<slug> opens the done step for an existing
   // local preview, so the style picker can be tested without calling /api/generate.
@@ -75,17 +79,21 @@ export function Builder() {
     setStep("done");
   }, []);
 
-  async function pickStyle(key: SiteStyle) {
-    if (!result || saving) return;
+  async function pickStyle(key: SiteStyle, again = true): Promise<void> {
+    if (!result || (saving && again)) return;
     setSaving(key);
     setStyleMsg("");
     try {
       const res = await fetch("/api/style", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug: result.slug, style: key }),
+        body: JSON.stringify({ slug: result.slug, style: key, m: memberToken() }),
       });
       const json = await res.json().catch(() => ({}));
+      if (res.status === 401 && json.code === "login_required" && again) {
+        await signInAgain();
+        return pickStyle(key, false);
+      }
       if (!res.ok) throw new Error(json.error || "Kaydedilemedi, lütfen tekrar dene.");
       setSaved(key);
       setStyleMsg(`Kaydedildi. Siten artık ${SITE_STYLES.find((o) => o.key === key)?.name} tarzında.`);
@@ -123,6 +131,7 @@ export function Builder() {
 
   useEffect(() => {
     if (step !== "build") return;
+    adWait.current = waitingAd(adBox.current);
     const t0 = Date.now();
     const id = setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 500);
     return () => clearInterval(id);
@@ -152,13 +161,20 @@ export function Builder() {
     const fd = new FormData();
     fd.set("payload", JSON.stringify(payload));
     fd.set("website", honeypot.current?.value ?? "");
+    fd.set("m", memberToken() ?? "");
     if (logo) fd.set("logo", logo);
     photos.forEach((p, i) => p && fd.set(`photo_${i}`, p));
     realTrainers.forEach((t, i) => t.photo && fd.set(`trainer_${i}`, t.photo));
     try {
       const res = await fetch("/api/generate", { method: "POST", body: fd });
       const json = await res.json().catch(() => ({}));
+      if (res.status === 401 && json.code === "login_required") {
+        setStep("color");
+        await signInAgain();
+        return build();
+      }
       if (!res.ok) throw new Error(json.error || "Site oluşturulamadı, lütfen tekrar dene.");
+      await adWait.current;
       setResult(json);
       go("done");
     } catch (e) {
@@ -536,6 +552,7 @@ export function Builder() {
               <h1>Siten hazırlanıyor</h1>
               <p className="sy-sub">{stage.text}…</p>
               <p className="sy-timer">{elapsed} sn · genelde 1–2 dakika sürer</p>
+              <div className="sy-ad" ref={adBox} />
             </div>
           )}
 

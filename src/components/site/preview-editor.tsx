@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { GROUND_OPTIONS, PICKER_START, isHexColour } from "@/lib/grounds";
 import { SITE_STYLES, type SiteStyle } from "@/lib/styles";
+import { memberToken } from "@/lib/fm-kit";
 
 type Edit = { style?: SiteStyle; ground?: string };
 
@@ -60,7 +61,7 @@ export function PreviewEditor({ slug, style, ground }: { slug: string; style: Si
         res = await fetch("/api/style", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug, ...edit }),
+          body: JSON.stringify({ slug, ...edit, m: memberToken() }),
         });
         if (res.status !== 409) break;
       }

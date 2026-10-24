@@ -3,6 +3,7 @@ import { siteOnGround, whiteLogoLater } from "@/lib/generate";
 import { toGround } from "@/lib/palette";
 import { getStoredSite, saveSite } from "@/lib/store";
 import { isSiteStyle } from "@/lib/styles";
+import { memberFail, verifyMember } from "@/lib/member";
 
 // Edits an existing Site Yapıcı preview after it was built (done step and the
 // preview's "Düzenle"): its style ("Tarz") and/or its page ground ("Zemin").
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 const WINDOW = 10 * 60 * 1000;
 const LIMIT = 30;
 const GROUND_LIMIT = 15;
-const MAX_BODY = 512;
+const MAX_BODY = 3072; // slug + style + ground + the member's session token
 const SLUG = /^[a-z0-9-]{2,64}$/;
 const hits = new Map<string, number[]>();
 const busy = new Set<string>();
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
 
   const raw = await req.text();
   if (new TextEncoder().encode(raw).length > MAX_BODY) return fail(413, "İstek çok büyük.");
-  let body: { slug?: unknown; style?: unknown; ground?: unknown };
+  let body: { slug?: unknown; style?: unknown; ground?: unknown; m?: unknown };
   try {
     body = JSON.parse(raw);
   } catch {
@@ -54,6 +55,8 @@ export async function POST(req: Request) {
   if (style !== undefined && !isSiteStyle(style)) return fail(400, "Geçersiz tarz.");
   if (ground === null) return fail(400, "Geçersiz renk.");
   if (style === undefined && ground === undefined) return fail(400, "Değişiklik yok.");
+  const member = await verifyMember(body.m);
+  if (!member.ok) return memberFail(member.code);
 
   // One edit per site at a time (read after taking the lock), so a slow ground
   // change and a style picked meanwhile can't overwrite each other.
@@ -65,6 +68,8 @@ export async function POST(req: Request) {
   try {
     const site = await getStoredSite(slug);
     if (!site || site._meta?.preview !== true) return fail(404, "Önizleme bulunamadı.");
+    const owner = site._meta.owner?.leadId;
+    if (owner && member.leadId && owner !== member.leadId) return fail(403, "Bu siteyi yalnız onu oluşturan hesap düzenleyebilir.");
     next = ground !== undefined ? await siteOnGround(slug, site, ground, { quick: true }) : site;
     if (isSiteStyle(style)) {
       const meta = next._meta!;

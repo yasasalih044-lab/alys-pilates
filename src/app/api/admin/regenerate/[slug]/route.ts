@@ -20,6 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
     await generateSite(inputFromSite(site), await filesFromStore(slug, site), {
       slug,
       ip: site._meta.owner?.ip,
+      leadId: site._meta.owner?.leadId,
       createdAt: site._meta.createdAt,
     });
     return Response.json({ slug, url: `/s/${slug}` });

@@ -19,7 +19,8 @@ export type SiteMeta = {
   input?: BuilderInput;
   /** Preview built by Site Yapıcı (shows the "bu siteyi istiyorum" bar). */
   preview: boolean;
-  owner?: { studio: string; whatsapp: string; ip?: string };
+  /** leadId = the Fullmatik member who built it: only they can edit it later. */
+  owner?: { studio: string; whatsapp: string; ip?: string; leadId?: string };
   /** Full-white logo made for dark grounds, kept so a later ground change can reuse it. */
   logoWhite?: string;
 };

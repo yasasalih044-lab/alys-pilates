@@ -34,7 +34,7 @@ const rgb = (hex: string): [number, number, number] => {
 export async function generateSite(
   input: BuilderInput,
   files: GenerateFiles,
-  opts: { slug?: string; ip?: string; createdAt?: string } = {},
+  opts: { slug?: string; ip?: string; createdAt?: string; leadId?: string | null } = {},
 ): Promise<string> {
   const slug = opts.slug ?? (await makeSlug(input.studio));
   // Versioned file names: /u/ is cached as immutable, so a regenerated image needs a new URL.
@@ -103,7 +103,7 @@ export async function generateSite(
       createdAt: opts.createdAt ?? new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       preview: true,
-      owner: { studio: input.studio, whatsapp: input.whatsapp, ip: opts.ip },
+      owner: { studio: input.studio, whatsapp: input.whatsapp, ip: opts.ip, ...(opts.leadId ? { leadId: opts.leadId } : {}) },
       input,
       ...(logos.white ? { logoWhite: logos.white } : {}),
     },
