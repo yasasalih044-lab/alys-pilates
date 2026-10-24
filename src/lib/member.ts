@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 // Fullmatik membership: the page sends the member's session token (`m`); we never trust the browser and ask the
 // CRM ourselves (POST /api/internal/fullmatik-verify with a shared secret). Answers are cached briefly, so a
 // deleted or blocked member drops out within a few minutes. Without FULLMATIK_INTERNAL_TOKEN nothing is checked
-// (local development).
+// in development; in production a missing secret closes the gate.
 
 const VERIFY_URL = process.env.FULLMATIK_VERIFY_URL || "https://bsgkg4wwk0g8oko8g04w4ggw.mavrosai.site/api/internal/fullmatik-verify";
 const TTL = 5 * 60 * 1000;
@@ -21,7 +21,8 @@ const cache = new Map<string, { until: number; result: MemberCheck }>();
 
 export async function verifyMember(m: unknown): Promise<MemberCheck> {
   const secret = process.env.FULLMATIK_INTERNAL_TOKEN;
-  if (!secret) return { ok: true, leadId: null };
+  // A production deploy without the secret must not silently open the gate.
+  if (!secret) return process.env.NODE_ENV === "production" ? { ok: false, code: "member_unavailable" } : { ok: true, leadId: null };
   const token = typeof m === "string" ? m.trim() : "";
   if (!token || token.length > 2048) return { ok: false, code: "login_required" };
   const key = createHash("sha256").update(token).digest("hex");

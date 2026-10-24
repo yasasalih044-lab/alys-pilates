@@ -70,13 +70,15 @@ export async function POST(req: Request) {
     if (!site || site._meta?.preview !== true) return fail(404, "Önizleme bulunamadı.");
     const owner = site._meta.owner?.leadId;
     if (owner && member.leadId && owner !== member.leadId) return fail(403, "Bu siteyi yalnız onu oluşturan hesap düzenleyebilir.");
+    // A preview built before sign-in existed belongs to the first member who edits it.
+    const claim = !owner && member.leadId ? { owner: { ...(site._meta.owner ?? { studio: site.brand?.name ?? "", whatsapp: "" }), leadId: member.leadId } } : {};
     next = ground !== undefined ? await siteOnGround(slug, site, ground, { quick: true }) : site;
     if (isSiteStyle(style)) {
       const meta = next._meta!;
       next = { ...next, style, _meta: { ...meta, ...(meta.input ? { input: { ...meta.input, style } } : {}) } };
     }
     const { _later, ...save } = next as typeof next & { _later?: boolean };
-    await saveSite(slug, { ...save, _meta: { ...save._meta!, updatedAt: new Date().toISOString() } });
+    await saveSite(slug, { ...save, _meta: { ...save._meta!, ...claim, updatedAt: new Date().toISOString() } });
     later = !!_later;
   } catch (e) {
     console.error(`edit failed for ${slug}`, e);
